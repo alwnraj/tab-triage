@@ -30,7 +30,7 @@ popup ──{sort, windowId, threshold}──▶ service worker
 
 **Classify everything first, then apply.** A run either applies its whole plan or moves nothing. With the cache, a retry after a transient failure costs almost no calls.
 
-**The pipeline runs in the service worker.** The popup closes as soon as it loses focus, so it can't run the pipeline itself. The worker has no "current window", so the popup sends its own `windowId` (from `chrome.windows.getCurrent()`, or from a `?window=` query parameter when the popup is opened in a popup-type window for the demo).
+**The pipeline runs in the service worker.** The popup closes as soon as it loses focus, so it can't run the pipeline itself. The worker has no "current window", so the popup sends its own `windowId` (from `chrome.windows.getCurrent()`, or from a `?window=` query parameter when the popup page is opened as a tab by tests). The worker records a running sort or undo in `chrome.storage.session` (`run:<windowId>`), and an open popup listens to session changes, so it shows a run live even if it opened mid-run or the run was started elsewhere.
 
 ## 4. The request (one per tab per ordering)
 

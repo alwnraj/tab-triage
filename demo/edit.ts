@@ -43,7 +43,7 @@ export async function edit(raw: string, log: RunLog, report: SortReport, opts: {
   const speed = classify > 3 ? classify / 2.5 : 1;
   const segs: Array<{ from: number; to: number; speed: number; text: string; sub?: string }> = [
     { from: e.messy!, to: e.popup!, speed: 1, text: `${report.results.length} open tabs. No order.`, sub: mode },
-    { from: e.popup!, to: e.sortClick! + 0.3, speed: 1, text: "Press Sort", sub: "one request per tab: Choice + companion Noul" },
+    { from: e.popup!, to: e.sortClick! + 0.3, speed: 1, text: "Open tab-triage from the toolbar", sub: "one request per tab: Choice + companion Noul" },
     { from: e.sortClick! + 0.3, to: e.sorted!, speed, text: speed > 1 ? `Classifying… (sped up ${speed.toFixed(1)}×)` : "Classifying…", sub: mode },
     { from: e.sorted!, to: e.leftAlone!, speed: 1, text: "Confident tabs hop into colored groups", sub: "threshold 0.8 on both the Choice and the Noul" },
     { from: e.leftAlone!, to: e.collapsed!, speed: 1, text: "Not sure? Left alone, with its probability", sub: "ungrouped beats wrongly grouped" },

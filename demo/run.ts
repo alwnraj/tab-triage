@@ -12,8 +12,10 @@
  *
  * Capture: macOS → avfoundation (needs Screen Recording permission for your terminal);
  *          Linux → x11grab (run under `xvfb-run -s "-screen 0 1920x1080x24"`).
- * The popup is shown in a popup-type window next to the strip and clicked by Playwright:
- * real toolbar clicks need xdotool (Linux only) and aren't reliable, so we don't fake them.
+ * The popup is Chrome's real toolbar dropdown (chrome.action.openPopup). Playwright can't
+ * click inside it, so the sort and undo are started through the worker and the open popup
+ * updates itself live, as it would for a user. (Synthetic toolbar clicks would need xdotool
+ * and aren't reliable, so we don't fake them.)
  */
 import { type ChildProcess, execFileSync, spawn } from "node:child_process";
 import { mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
@@ -199,41 +201,34 @@ try {
   mark("messy");
   await sleep(5000);
 
-  const popupPromise = ctx.waitForEvent("page", { timeout: 15_000 });
-  await sw.evaluate(
-    async ({ url, b, headless }) => {
-      const size = { width: 430, height: Math.min(640, b.height - 60) };
-      // Headless has a tiny virtual screen, so let Chrome place it there.
-      const pos = headless ? {} : { left: b.left + b.width - 450, top: b.top + 78 };
-      const w = await chrome.windows.create({ url, type: "popup", ...size, ...pos });
-      // macOS Chrome can open the popup at the size of the last normal window, covering the
-      // tab strip, so set the bounds again explicitly once it exists.
-      if (!headless) await chrome.windows.update(w!.id!, { ...size, ...pos });
-    },
-    { url: `chrome-extension://${extId}/popup.html?window=${windowId}`, b: bounds, headless: HEADLESS },
-  );
-  const popup = await popupPromise;
-  await popup.waitForLoadState("domcontentloaded");
-  const popupBounds = await sw.evaluate(async () => {
-    const [w] = await chrome.windows.getAll({ windowTypes: ["popup"] });
-    return w ? { left: w.left, top: w.top, width: w.width, height: w.height } : null;
-  });
-  console.log(`[demo] popup window ${JSON.stringify(popupBounds)}`);
+  // The real toolbar dropdown (chrome.action.openPopup). Playwright can't click inside an
+  // action popup, so the demo starts the sort and undo through the worker; the open popup
+  // updates itself live from session state, exactly as it does for a user.
+  type Handle = { handle(m: unknown): Promise<{ ok: boolean; error?: string }> };
+  const act = (m: object) =>
+    sw.evaluate(async (msg) => (globalThis as unknown as { tabTriage: Handle }).tabTriage.handle(msg), m as Record<string, unknown>);
+  const popupOpen = () => sw.evaluate(async () => (await chrome.runtime.getContexts({ contextTypes: ["POPUP" as chrome.runtime.ContextType] })).length > 0);
+  if (HEADLESS) {
+    // No toolbar to anchor to in headless mode: show the same page as a tab instead.
+    await (await ctx.newPage()).goto(`chrome-extension://${extId}/popup.html?window=${windowId}`);
+  } else {
+    await sw.evaluate(async (wid) => {
+      await chrome.windows.update(wid, { focused: true });
+      await chrome.action.openPopup({ windowId: wid });
+    }, windowId);
+    await sleep(500);
+    if (!(await popupOpen())) throw new Error("The toolbar popup didn't open");
+  }
   mark("popup");
   await sleep(2000);
 
   mark("sortClick");
-  await popup.click("#sort");
-  await popup.waitForFunction(() => !(document.getElementById("sort") as HTMLButtonElement).disabled, null, { timeout: 120_000 });
+  const sorted = await act({ type: "sort", windowId, threshold: 0.8 });
+  if (!sorted.ok) throw new Error(`Sort failed: ${sorted.error}`);
   mark("sorted");
   // The key is only needed for the sort itself: remove it from the temporary profile right away.
   await sw.evaluate(() => chrome.storage.local.remove("apiKey"));
   await sleep(3500);
-
-  await popup.evaluate(() => {
-    const hs = [...document.querySelectorAll("#results h3")];
-    (hs.find((h) => h.textContent?.startsWith("Left alone")) ?? hs[0])?.scrollIntoView({ behavior: "smooth", block: "start" });
-  });
   mark("leftAlone");
   await sleep(6000);
 
@@ -243,9 +238,10 @@ try {
   mark("collapsed");
   await sleep(3500);
 
-  await popup.click("#undo");
-  await popup.waitForFunction(() => (document.getElementById("message")?.textContent ?? "").includes("Undone"), null, { timeout: 20_000 });
+  const undone = await act({ type: "undo", windowId });
+  if (!undone.ok) throw new Error(`Undo failed: ${undone.error}`);
   mark("undone");
+  if (!HEADLESS && !(await popupOpen())) console.warn("  (the toolbar popup closed during the run: check the video)");
   await sleep(4500);
   mark("end");
 
