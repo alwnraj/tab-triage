@@ -14,7 +14,11 @@ export default async function classify(request: Request): Promise<Response> {
   const url = env.UPSTASH_REDIS_REST_URL ?? env.KV_REST_API_URL;
   const token = env.UPSTASH_REDIS_REST_TOKEN ?? env.KV_REST_API_TOKEN;
   return handle(request, env as Env, {
-    fetch: (input, init) => fetch(input, init),
+    // Edge runtimes don't all implement the browser-only `cache`/`credentials` fields; drop them server-side.
+    fetch: (input, init) => {
+      const { cache: _c, credentials: _cr, ...rest } = init ?? {};
+      return fetch(input, rest);
+    },
     now: () => Date.now(),
     limiter: url && token ? upstashLimiter(url, token) : null,
     // Status, outcome and timing only: never the request body.

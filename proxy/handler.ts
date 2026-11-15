@@ -127,7 +127,8 @@ export async function handle(request: Request, env: Env, deps: Deps): Promise<Re
     if (kind === "bad_request" || kind === "bad_response") return json(422, { error: "upstream rejected this tab" });
     if (kind === "timeout") return json(504, { error: "upstream timeout" });
     // auth (our key is wrong or revoked), network, server: a service problem, not the user's.
-    return json(502, { error: "upstream error" });
+    // The kind and upstream status are safe to return and make a misconfiguration diagnosable.
+    return json(502, { error: "upstream error", kind, upstream: upstream ?? null });
   }
 
   if (deps.limiter) {
