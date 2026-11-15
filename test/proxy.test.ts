@@ -72,7 +72,9 @@ describe("hosted service (proxy/handler.ts)", () => {
   });
 
   it("refuses other methods, web-page origins and origins off the allow-list", async () => {
-    expect((await setup().call(BODY, {}, "GET")).status).toBe(405);
+    const health = await setup().call(BODY, {}, "GET");
+    expect(await health.json()).toEqual({ ok: true, configured: true, limits: true, model: "jev-1.14.0" });
+    expect((await setup().call(BODY, {}, "PUT")).status).toBe(405);
     expect((await setup().call(BODY, { origin: "https://evil.example" })).status).toBe(403);
     const listed = setup(undefined, { TYPESAFE_API_KEY: KEY, ALLOWED_ORIGINS: "chrome-extension://onlythisone" });
     expect((await listed.call()).status).toBe(403);

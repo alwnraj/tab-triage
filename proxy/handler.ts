@@ -72,7 +72,10 @@ export async function handle(request: Request, env: Env, deps: Deps): Promise<Re
     return res;
   };
 
-  if (request.method !== "POST") return done(json(405, { error: "method" }, { allow: "POST" }), "method");
+  // Health check: whether the key and the limits are configured (never their values).
+  if (request.method === "GET")
+    return done(json(200, { ok: true, configured: !!env.TYPESAFE_API_KEY?.trim(), limits: !!deps.limiter, model: MODEL_ID }), "health");
+  if (request.method !== "POST") return done(json(405, { error: "method" }, { allow: "GET, POST" }), "method");
   if (!originAllowed(request.headers.get("origin"), env)) return done(json(403, { error: "origin" }), "origin");
   const key = env.TYPESAFE_API_KEY?.trim();
   if (!key) return done(json(503, { error: "not configured" }, { [ERROR_HEADER]: "not_configured" }), "not_configured");
