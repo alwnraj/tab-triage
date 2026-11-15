@@ -60,18 +60,20 @@ try {
   const popup = await ctx.newPage();
   await popup.goto(`chrome-extension://${extId}/popup.html?window=${windowId}`);
   const beforeWithPopup = await strip();
-  // Threshold stepper and presets: +0.05 from the default, then back with a preset.
-  await popup.click("#t-up");
-  assert.equal(await popup.textContent("#tval"), "0.85");
-  await popup.click("#presets button[aria-label='Threshold 0.80']");
-  assert.equal(await popup.textContent("#tval"), "0.80");
-  assert.equal(await popup.getAttribute("#presets button[aria-label='Threshold 0.80']", "aria-pressed"), "true");
   await popup.click("#sort");
   await popup.waitForSelector("#results li", { timeout: 20_000 });
   const after = await strip();
-  const footer = await popup.textContent("footer");
-  console.log("footer:", footer?.replace(/\s+/g, " "));
-  assert.match(footer ?? "", /MOCK/);
+  // A mock run must always say so in the popup.
+  assert.equal(await popup.isVisible("#mock"), true, "MOCK tag shown");
+  console.log("summary:", (await popup.textContent("#summary"))?.replace(/\s+/g, " "));
+
+  // The threshold now lives on the Options page, next to the last run's speed and cost.
+  const opts = await ctx.newPage();
+  await opts.goto(`chrome-extension://${extId}/options.html`);
+  assert.equal(await opts.inputValue("#threshold"), "0.8");
+  await opts.waitForFunction(() => (document.getElementById("last-sort")?.textContent ?? "").includes("MOCK"));
+  console.log("options:", await opts.textContent("#last-sort"));
+  await opts.close();
 
   const groupOf = (title: string) => {
     const t = after.tabs.find((x) => x.title.startsWith(title));

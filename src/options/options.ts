@@ -4,6 +4,7 @@ import { toModelGroups } from "../core/groups.js";
 import { normalizeDomain, toTabInput, truncateTitle } from "../core/privacy.js";
 import { GROUP_COLORS, type GroupDef } from "../core/types.js";
 import { buildRequest } from "../providers/request.js";
+import type { SortReport } from "../core/sort.js";
 import { chromeKV, loadApiKey, loadSettings, saveApiKey, saveSettings, type Settings } from "../settings.js";
 
 const kv = chromeKV(chrome.storage.local);
@@ -97,6 +98,22 @@ async function exportTabs() {
   $("data-status").textContent = `Exported ${rows.length} tabs.`;
 }
 
+/** The most recent sort in any window: its speed and cost (the popup keeps to results only). */
+async function renderLastSort() {
+  const all = await chrome.storage.session.get(null);
+  const reports = Object.entries(all)
+    .filter(([k]) => k.startsWith("report:"))
+    .map(([, v]) => v as SortReport)
+    .sort((a, b) => b.at - a.at);
+  const r = reports[0];
+  if (!r) return;
+  const m = r.metrics;
+  const cost = m.estCostUsd === 0 ? "$0" : m.estCostUsd < 0.0001 ? `$${m.estCostUsd.toExponential(1)}` : `$${m.estCostUsd.toFixed(4)}`;
+  $("last-sort").textContent =
+    `Last sort: ${(m.latencyMs / 1000).toFixed(2)} s · est. ${cost} (${m.inputTokens} input tokens) · ` +
+    `${Math.round(m.sortedPct * 100)}% sorted · ${m.apiCalls} calls, ${m.cacheHits} cached · ${r.mock ? "MOCK classifier" : r.classifierId}`;
+}
+
 async function init() {
   s = await loadSettings(kv);
   renderGroups();
@@ -104,6 +121,15 @@ async function init() {
   renderExample();
   await renderKeyStatus();
   $<HTMLTextAreaElement>("blocklist").value = s.blocklist.join("\n");
+  const th = $<HTMLInputElement>("threshold");
+  th.value = String(s.threshold);
+  $("threshold-value").textContent = s.threshold.toFixed(2);
+  th.addEventListener("input", () => {
+    s.threshold = Number(th.value);
+    $("threshold-value").textContent = s.threshold.toFixed(2);
+    persist();
+  });
+  void renderLastSort();
   $<HTMLInputElement>("collapse").checked = s.collapse;
   $<HTMLInputElement>("mock").checked = s.mockMode;
 

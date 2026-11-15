@@ -20,29 +20,17 @@
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>
         Undo
       </button>
-    </section>
-
-    <section class="threshold" aria-labelledby="t-label">
-      <div id="t-label" class="label">Only group when at least this sure</div>
-      <div class="stepper">
-        <button id="t-down" class="tile" aria-label="Lower the threshold by 0.05">−0.05</button>
-        <output id="tval" class="tile value" aria-live="polite">0.80</output>
-        <button id="t-up" class="tile" aria-label="Raise the threshold by 0.05">+0.05</button>
-      </div>
-      <div id="presets" class="presets" role="group" aria-label="Threshold presets"></div>
+      <button id="options" class="tile icon" aria-label="Options" title="Options">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>
+      </button>
     </section>
 
     <div id="message" class="banner hidden" role="status" aria-live="polite"></div>
 
     <section id="summary" class="summary hidden"></section>
+    <p id="mock" class="mock-tag hidden">MOCK · keyword rehearsal, not the model</p>
     <ol id="results" aria-label="Results"></ol>
 
-    <footer>
-      <div id="metrics" class="metrics"></div>
-      <button id="options" class="icon" aria-label="Options" title="Options">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>
-      </button>
-    </footer>
   </main>
   <script src="popup.js" type="module"></script>
 </body>

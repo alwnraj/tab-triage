@@ -19,4 +19,6 @@ pre {
 .group textarea, .group .domains { grid-column: 1 / -1; }
 .group .domains { width: 100%; }
 label { line-height: 1.9; }
+.threshold input { flex: 1; max-width: 360px; accent-color: var(--accent); }
+.threshold output { font-weight: 700; font-variant-numeric: tabular-nums; min-width: 3ch; }
 @media (max-width: 520px) { .group { grid-template-columns: 1fr; } }
