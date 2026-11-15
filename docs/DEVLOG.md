@@ -104,3 +104,9 @@ All six representative tabs were grouped correctly, with Choice ≥ 0.99 and Nou
 Noted, not acted on (one probe is too few cases to tune on, which TypeSafe's skill also warns against):
 - **The Noul moves with group order too:** Hacker News 0.84 forward, 0.70 reversed. The decision rule only checks the reversed *top choice*, not the reversed Noul. If the eval shows this often, the reversed Noul should have to pass as well.
 - **Wirecutter's Noul of 0.77** would pass the 0.7 starting point the skill suggests for a Noul but not the shared 0.8. Whether the Noul needs its own threshold is a question for the eval's reliability bins.
+
+## 11. Real demo recorded
+
+`npm run demo` with the real classifier: 30 public pages, 29 API calls (one tab went through the arXiv domain rule), 17,304 input tokens, $0.00073, 2.3 s from click to grouped. 26 tabs were grouped into five groups and 4 were left alone: GitHub Actions docs (62%), Maillard reaction (77%, so no reversed re-ask was needed), timeanddate (Noul 0.08) and weather.gov (Noul 0.12). The end card reads these numbers from the run's own report. I checked frames for every step (messy, grouped, left alone, collapsed, undone) and the frame check: only the browser window is in frame. The video is 36.1 s, H.264, yuv420p, faststart; the GIF is 1.5 MB. Only `demo/demo.gif` and `demo/poster.png` are committed. The MP4 stays in gitignored `demo/out/`.
+
+One thing to watch: the Wirecutter tab's title came through as "nyt.net" rather than the article title (the page probably didn't finish loading or served an interstitial that the bot-check filter doesn't recognise). It was grouped as News from that. Replace that URL before re-recording.
