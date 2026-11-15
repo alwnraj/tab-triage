@@ -36,7 +36,12 @@ The service logs only an outcome, a status and a duration per request: never the
    | `ALLOWED_ORIGINS` | (any extension) | After the Chrome Web Store assigns an id: `chrome-extension://<id>`. |
 
 5. **Redeploy** so the variables take effect.
-6. **Point the extension at it.** The default service address is a placeholder that never resolves (`tab-triage-service.invalid`), so an extension built without a real address can't send data anywhere by accident. Build with `TAB_TRIAGE_SERVICE=https://<your-domain> npm run build`. That sets both the URL in the code and the manifest's only host permission. Check the domain is really yours first: `tab-triage.vercel.app` belongs to an unrelated site.
+6. **Point the extension at it.** The production service is `https://tab-triage-pi.vercel.app`, and that's the default. A fork or staging deployment builds with `TAB_TRIAGE_SERVICE=https://<your-domain> npm run build`, which sets both the URL in the code and the manifest's only host permission. Check the domain is really yours first: `tab-triage.vercel.app`, for example, belongs to an unrelated site.
+7. **Check it.** `GET /api/classify` returns `{"configured": true, "limits": true}` when both the key and Redis are set, without showing either value. Don't publish the extension while `limits` is `false`.
+
+## Notes from the first deploy
+
+Vercel's Edge runtime rejects `redirect: "error"` in `fetch`. Every upstream call failed as a "network" error even though the same code ran fine on Node. The service now uses `redirect: "manual"` and drops the browser-only `cache` and `credentials` fields, so it still never follows a redirect with the key attached. A 502 now names the error kind and, for network errors, the underlying message (never any request data).
 
 ## Run it locally
 

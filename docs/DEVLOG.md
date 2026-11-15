@@ -135,3 +135,11 @@ Design choices:
 - The extension's `HostedClassifier` shares its retry/timeout code with the TypeSafe client (`providers/http.ts`); the refactor kept all 21 existing provider tests passing unchanged. The API-key card is gone, and an update removes any saved key. The service URL is a build-time constant that also writes the manifest's single host permission.
 
 Verified locally: 14 new unit tests for the service and client, and a real sort of 6 tabs in Chromium through the built service running locally with the key (5 grouped, $0.00013), with a service log of outcome, status and timing only. Not yet deployed: the Vercel connector in this session can't create projects (403), so the import and the production key are set in the Vercel dashboard (proxy/README.md).
+
+## 15. Deployed
+
+The service is live at `https://tab-triage-pi.vercel.app` (Vercel, imported from GitHub, so every push to `main` redeploys it). Two surprises:
+- **`tab-triage.vercel.app` was already taken** by an unrelated site, and I had used it as the default service URL. Nothing was ever sent there (no extension was built or installed against it), but it was caught only because the deploy check fetched that page and found someone else's site. Lesson: verify a domain is yours before writing it into code. The default is now the confirmed deployment.
+- **Every upstream call failed as "network"** on Vercel's Edge runtime, though the same bundle worked on Node: the runtime doesn't support `fetch(..., { redirect: "error" })`. Making the 502 report the error kind narrowed it down in one redeploy. The service now uses `redirect: "manual"`.
+
+Verified live: the landing and privacy pages; refusals for web-page origins (403), raw TypeSafe requests (400), missing install ids (400) and other methods (405); one classification (research, p = 1.00, 468 tokens); and a real sort of 6 tabs in Chromium with the extension built against the live service (5 grouped, 1.6 s, $0.00013, no key in the extension). The health check reported `limits: false`: Redis isn't connected yet, so the rate limits and the daily cap are off until it is.
