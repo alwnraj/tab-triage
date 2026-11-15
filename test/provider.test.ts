@@ -13,10 +13,10 @@ const INPUT = { site: "arxiv.org", title: "Attention Is All You Need" };
 const KEY = "ts_test_DO_NOT_LEAK_123";
 
 /** Shaped exactly like the OpenAPI "choice" + "noul" response examples. */
-const okBody = (probs = { g_research: 0.93, g_cooking: 0.07 }, noul = 0.97) => ({
+const okBody = (probs = { research: 0.93, cooking: 0.07 }, noul = 0.97) => ({
   model: "jev-1.14.0",
   answers: {
-    group: { type: "choice", choice: "g_research", confidence: 0.9, probabilities: probs },
+    group: { type: "choice", choice: "research", confidence: 0.9, probabilities: probs },
     fits: { type: "noul", noul },
   },
   usage: { input_tokens: 180, output_tokens: 20 },
@@ -51,23 +51,23 @@ describe("buildRequest", () => {
     const body = buildRequest("jev-1.14.0", INPUT, MG, "fwd");
     expect(body.state).toEqual(INPUT);
     expect(body.questions.group.type).toBe("choice");
-    expect(Object.keys(body.questions.group.criteria)).toEqual(["g_research", "g_cooking"]);
+    expect(Object.keys(body.questions.group.criteria)).toEqual(["research", "cooking"]);
     expect(body.questions.fits.type).toBe("noul");
     expect(body.questions.fits.criteria).toHaveProperty("true");
     expect(body.questions.fits.criteria).toHaveProperty("false");
   });
   it("reverses both the Choice options and the Noul's group list", () => {
     const body = JSON.parse(JSON.stringify(buildRequest("m", INPUT, MG, "rev")));
-    expect(Object.keys(body.questions.group.criteria)).toEqual(["g_cooking", "g_research"]);
-    expect(Object.keys(body.questions.fits.instructions.groups)).toEqual(["g_cooking", "g_research"]);
+    expect(Object.keys(body.questions.group.criteria)).toEqual(["cooking", "research"]);
+    expect(Object.keys(body.questions.fits.instructions.groups)).toEqual(["cooking", "research"]);
   });
 });
 
 describe("parseResponse", () => {
   it("parses the documented response", () => {
     expect(parseResponse(okBody(), MG)).toEqual({
-      choice: "g_research",
-      probabilities: { g_research: 0.93, g_cooking: 0.07 },
+      choice: "research",
+      probabilities: { research: 0.93, cooking: 0.07 },
       noul: 0.97,
       inputTokens: 180,
       model: "jev-1.14.0",
@@ -76,7 +76,7 @@ describe("parseResponse", () => {
   it("rejects malformed answers and unknown choices", () => {
     expect(() => parseResponse({}, MG)).toThrow(ClassifierError);
     const bad = okBody();
-    (bad.answers.group as { choice: string }).choice = "g_other";
+    (bad.answers.group as { choice: string }).choice = "other";
     expect(() => parseResponse(bad, MG)).toThrow(/unexpected/);
     const bad2 = okBody();
     (bad2.answers.fits as { noul: unknown }).noul = "high";
@@ -112,7 +112,7 @@ describe("TypeSafeClassifier", () => {
   });
   it("retries network errors", async () => {
     const { c } = client([new TypeError("fetch failed"), res(200, okBody())]);
-    await expect(c.classify(INPUT, MG, "fwd")).resolves.toMatchObject({ choice: "g_research" });
+    await expect(c.classify(INPUT, MG, "fwd")).resolves.toMatchObject({ choice: "research" });
   });
   it.each([400, 401, 403, 422])("does not retry %i", async (status) => {
     const { c, f } = client([res(status, { detail: "x" }), res(200, okBody())]);
@@ -136,8 +136,8 @@ describe("TypeSafeClassifier", () => {
     expect(n).toBe(2);
   });
   it("rejects out-of-range probabilities and nouls", () => {
-    const bad = okBody({ g_research: 1.7, g_cooking: 0 }, 0.5);
-    expect(parseResponse(bad, MG).probabilities.g_research).toBe(0);
+    const bad = okBody({ research: 1.7, cooking: 0 }, 0.5);
+    expect(parseResponse(bad, MG).probabilities.research).toBe(0);
     expect(() => parseResponse(okBody(undefined, 1.2), MG)).toThrow(ClassifierError);
   });
   it("does not expose the key when the classifier object is logged or serialised", () => {
@@ -163,14 +163,14 @@ describe("MockClassifier", () => {
     const m = new MockClassifier();
     expect(m.isMock).toBe(true);
     const a = await m.classify({ site: "example.com", title: "Easy pasta recipes for food lovers" }, MG, "fwd");
-    expect(a.choice).toBe("g_cooking");
+    expect(a.choice).toBe("cooking");
     expect(a.noul).toBeGreaterThan(0.8);
     const none = await m.classify({ site: "x.com", title: "zzz" }, MG, "fwd");
     expect(none.noul).toBeLessThan(0.5);
     // The first-option lean is in the probabilities, so reversing can flip the top answer.
     const fwd = await m.classify({ site: "x.com", title: "zzz" }, MG, "fwd");
     const rev = await m.classify({ site: "x.com", title: "zzz" }, MG, "rev");
-    expect(fwd.choice).toBe("g_research");
-    expect(rev.choice).toBe("g_cooking");
+    expect(fwd.choice).toBe("research");
+    expect(rev.choice).toBe("cooking");
   });
 });

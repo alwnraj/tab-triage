@@ -62,9 +62,9 @@ describe("privacy", () => {
 describe("groups", () => {
   it("builds non-numeric unique keys and drops domain-only groups", () => {
     expect(slugKey("2024")).toBe("g_2024");
-    expect(slugKey("日本")).toBe("g_group");
+    expect(slugKey("日本")).toBe("group");
     const mg = toModelGroups([...G, { id: "d", name: "research!", color: "grey", description: "x", domains: [] }]);
-    expect(mg.map((g) => g.key)).toEqual(["g_research", "g_shopping", "g_research_2"]);
+    expect(mg.map((g) => g.key)).toEqual(["research", "shopping", "research_2"]);
   });
   it("reversal really reverses JSON key order, even for numeric-looking names", () => {
     const mg = toModelGroups([
@@ -72,7 +72,7 @@ describe("groups", () => {
       { id: "2", name: "Alpha", color: "grey", description: "y", domains: [] },
     ]);
     const obj = Object.fromEntries(ordered(mg, "rev").map((g) => [g.key, g.description]));
-    expect(Object.keys(JSON.parse(JSON.stringify(obj)))).toEqual(["g_alpha", "g_2024"]);
+    expect(Object.keys(JSON.parse(JSON.stringify(obj)))).toEqual(["alpha", "g_2024"]);
   });
   it("domain table", () => {
     expect(matchDomain("www.arxiv.org", G)?.id).toBe("a");
@@ -83,23 +83,23 @@ describe("groups", () => {
 describe("decide", () => {
   const t = 0.8;
   it("reads probabilities by key", () => {
-    expect(topOf(ans({ g_shopping: 0.7, g_research: 0.3 }, 1), MG)?.key).toBe("g_shopping");
+    expect(topOf(ans({ shopping: 0.7, research: 0.3 }, 1), MG)?.key).toBe("shopping");
   });
   it("needs both the Choice and the companion Noul", () => {
-    expect(decide(ans({ g_research: 0.95, g_shopping: 0.05 }, 0.95), undefined, MG, t)).toMatchObject({ groupId: "a", reason: "confident" });
-    expect(decide(ans({ g_research: 0.95, g_shopping: 0.05 }, 0.5), undefined, MG, t)).toMatchObject({ groupId: null, reason: "no-fit" });
-    expect(decide(ans({ g_research: 0.6, g_shopping: 0.4 }, 0.99), undefined, MG, t)).toMatchObject({ groupId: null, reason: "low-prob" });
+    expect(decide(ans({ research: 0.95, shopping: 0.05 }, 0.95), undefined, MG, t)).toMatchObject({ groupId: "a", reason: "confident" });
+    expect(decide(ans({ research: 0.95, shopping: 0.05 }, 0.5), undefined, MG, t)).toMatchObject({ groupId: null, reason: "no-fit" });
+    expect(decide(ans({ research: 0.6, shopping: 0.4 }, 0.99), undefined, MG, t)).toMatchObject({ groupId: null, reason: "low-prob" });
   });
   it("re-asks only in the band just above the threshold", () => {
-    const near = ans({ g_research: 0.85, g_shopping: 0.15 }, 0.95);
+    const near = ans({ research: 0.85, shopping: 0.15 }, 0.95);
     expect(decide(near, undefined, MG, t).reason).toBe("needs-reverse");
-    expect(decide(near, ans({ g_research: 0.82, g_shopping: 0.18 }, 0.9), MG, t)).toMatchObject({ groupId: "a", reason: "order-agree" });
-    expect(decide(near, ans({ g_research: 0.4, g_shopping: 0.6 }, 0.9), MG, t)).toMatchObject({ groupId: null, reason: "order-disagree" });
+    expect(decide(near, ans({ research: 0.82, shopping: 0.18 }, 0.9), MG, t)).toMatchObject({ groupId: "a", reason: "order-agree" });
+    expect(decide(near, ans({ research: 0.4, shopping: 0.6 }, 0.9), MG, t)).toMatchObject({ groupId: null, reason: "order-disagree" });
     // Below threshold: no rescue, no re-ask.
-    expect(decide(ans({ g_research: 0.75, g_shopping: 0.25 }, 0.95), undefined, MG, t).reason).toBe("low-prob");
+    expect(decide(ans({ research: 0.75, shopping: 0.25 }, 0.95), undefined, MG, t).reason).toBe("low-prob");
   });
   it("treats missing or non-finite probabilities as absent", () => {
-    expect(decide(ans({ g_research: Number.NaN }, 0.99, "g_research"), undefined, MG, t).reason).toBe("low-prob");
+    expect(decide(ans({ research: Number.NaN }, 0.99, "research"), undefined, MG, t).reason).toBe("low-prob");
   });
 });
 
@@ -110,7 +110,7 @@ describe("cache", () => {
     const c = new AnswerCache(kv, () => now, 1000);
     const h = await groupsHash(MG);
     const k = await cacheKey({ site: "a.com", title: "T" }, h, "m", "fwd");
-    await c.set(k, ans({ g_research: 1 }, 1));
+    await c.set(k, ans({ research: 1 }, 1));
     expect(await c.get(k)).not.toBeNull();
     expect(k).not.toBe(await cacheKey({ site: "a.com", title: "T" }, h, "m", "rev"));
     expect(k).not.toBe(await cacheKey({ site: "a.com", title: "T" }, h, "mock", "fwd"));
@@ -123,16 +123,16 @@ describe("cache", () => {
     const kv = new MemoryKV();
     const c = new AnswerCache(kv);
     const k = await cacheKey({ site: "secret-host.com", title: "Secret title" }, "h", "m", "fwd");
-    await c.set(k, ans({ g_research: 1 }, 1));
+    await c.set(k, ans({ research: 1 }, 1));
     expect(JSON.stringify([...kv.map])).not.toMatch(/secret/i);
   });
   it("prunes expired entries", async () => {
     let now = 0;
     const kv = new MemoryKV();
     const c = new AnswerCache(kv, () => now, 10);
-    await c.set("cache:x", ans({ g_research: 1 }, 1));
+    await c.set("cache:x", ans({ research: 1 }, 1));
     now = 5;
-    await c.set("cache:y", ans({ g_research: 1 }, 1));
+    await c.set("cache:y", ans({ research: 1 }, 1));
     now = 12;
     expect(await c.prune()).toBe(1);
     expect([...kv.map.keys()]).toEqual(["cache:y"]);

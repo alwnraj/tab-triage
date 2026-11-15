@@ -16,7 +16,7 @@ export interface GroupDef {
 
 /** A group as the model sees it: a non-numeric key plus its description. */
 export interface ModelGroup {
-  key: string; // e.g. "g_research"
+  key: string; // e.g. "research" (all-digit names get a g_ prefix)
   groupId: string;
   description: string;
 }

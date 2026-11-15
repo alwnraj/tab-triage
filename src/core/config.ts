@@ -12,7 +12,7 @@ export const MODEL_ID = "jev-1.14.0";
 export const API_BASE = "https://api.typesafe.ai";
 
 /** Bump when the wording of the questions changes; part of the cache key. */
-export const PROMPT_VERSION = "p1";
+export const PROMPT_VERSION = "p2";
 
 export const DEFAULT_THRESHOLD = 0.8;
 /** Band above the threshold where we double-check with reversed option order. */

@@ -14,7 +14,11 @@ export function slugKey(name: string): string {
     .replace(/[^a-z0-9]+/g, "_")
     .replace(/^_+|_+$/g, "")
     .slice(0, 40);
-  return "g_" + (base || "group");
+  // Option names are sent to the model, so keep them plain words ("research"). Only an
+  // all-digit name needs a prefix: JS orders integer-like object keys first, which would
+  // silently undo the reversed-order re-ask.
+  if (!base) return "group";
+  return /^\d+$/.test(base) ? `g_${base}` : base;
 }
 
 /** Groups the model can choose between (those with a description), with unique keys. */

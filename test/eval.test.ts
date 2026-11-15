@@ -7,7 +7,7 @@ const MG = toModelGroups([
   { id: "a", name: "A", color: "blue", description: "a", domains: [] },
   { id: "b", name: "B", color: "red", description: "b", domains: [] },
 ]);
-const ans = (pa: number, noul: number): RawAnswer => ({ choice: pa >= 0.5 ? "g_a" : "g_b", probabilities: { g_a: pa, g_b: 1 - pa }, noul, inputTokens: 1, model: "t" });
+const ans = (pa: number, noul: number): RawAnswer => ({ choice: pa >= 0.5 ? "a" : "b", probabilities: { a: pa, b: 1 - pa }, noul, inputTokens: 1, model: "t" });
 
 describe("eval metrics", () => {
   const rows: EvalRow[] = [

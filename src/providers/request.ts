@@ -28,7 +28,7 @@ export function buildRequest(model: string, input: TabInput, groups: readonly Mo
         },
         criteria: {
           true: "The tab plainly matches the description of one of the groups.",
-          false: "The tab matches none of the groups, or only loosely.",
+          false: "The tab is about a topic that none of the group descriptions cover.",
         },
       },
     },
