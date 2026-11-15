@@ -74,6 +74,10 @@ describe("hosted service (proxy/handler.ts)", () => {
   it("refuses other methods, web-page origins and origins off the allow-list", async () => {
     const health = await setup().call(BODY, {}, "GET");
     expect(await health.json()).toEqual({ ok: true, configured: true, limits: true, model: "jev-1.14.0" });
+    const bare = await setup(undefined, { TYPESAFE_API_KEY: KEY, KV_URL: "redis://secret" } as Env, null as never).call(BODY, {}, "GET");
+    const h = await bare.text();
+    expect(JSON.parse(h)).toMatchObject({ limits: false, redisVariables: ["KV_URL"] });
+    expect(h).not.toContain("secret");
     expect((await setup().call(BODY, {}, "PUT")).status).toBe(405);
     expect((await setup().call(BODY, { origin: "https://evil.example" })).status).toBe(403);
     const listed = setup(undefined, { TYPESAFE_API_KEY: KEY, ALLOWED_ORIGINS: "chrome-extension://onlythisone" });
@@ -212,5 +216,16 @@ describe("HostedClassifier (extension side)", () => {
     const bad = new Response(JSON.stringify({ choice: "shopping", probabilities: {}, noul: 0.9, inputTokens: 1 }), { status: 200 });
     const e = await client([bad]).c.classify({ site: "a.com", title: "t" }, MG, "fwd").catch((x) => x);
     expect((e as ClassifierError).kind).toBe("bad_response");
+  });
+});
+
+describe("findUpstash (proxy/edge.ts)", () => {
+  it("finds Upstash REST credentials under any integration prefix", async () => {
+    const { findUpstash } = await import("../proxy/edge.js");
+    expect(findUpstash({ KV_REST_API_URL: "https://a.upstash.io", KV_REST_API_TOKEN: "t1" })).toEqual({ url: "https://a.upstash.io", token: "t1" });
+    expect(findUpstash({ UPSTASH_REDIS_REST_URL: "https://b.upstash.io", UPSTASH_REDIS_REST_TOKEN: "t2" })).toEqual({ url: "https://b.upstash.io", token: "t2" });
+    expect(findUpstash({ STORAGE_REST_API_URL: "https://c.upstash.io", STORAGE_REST_API_TOKEN: "t3" })).toEqual({ url: "https://c.upstash.io", token: "t3" });
+    // A TCP Redis URL alone isn't usable from the edge.
+    expect(findUpstash({ REDIS_URL: "redis://x" })).toEqual({});
   });
 });

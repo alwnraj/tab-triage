@@ -8,11 +8,24 @@ import { upstashLimiter } from "./limits.js";
 
 declare const process: { env: Record<string, string | undefined> };
 
+/**
+ * Upstash's REST credentials, under whatever prefix the Vercel Marketplace integration
+ * was given: UPSTASH_REDIS_REST_URL/_TOKEN (direct), KV_REST_API_URL/_TOKEN (default
+ * Marketplace prefix), or <PREFIX>_REST_API_URL/_TOKEN, <PREFIX>_REST_URL/_TOKEN.
+ */
+export function findUpstash(env: Record<string, string | undefined>): { url?: string; token?: string } {
+  for (const [name, value] of Object.entries(env)) {
+    const m = /^(.*_REST(?:_API)?)_URL$/.exec(name);
+    if (!m || !value?.startsWith("https://")) continue;
+    const token = env[`${m[1]}_TOKEN`];
+    if (token) return { url: value, token };
+  }
+  return {};
+}
+
 export default async function classify(request: Request): Promise<Response> {
   const env = process.env;
-  // The Vercel Marketplace Upstash integration sets KV_REST_API_*; a direct Upstash database sets UPSTASH_REDIS_REST_*.
-  const url = env.UPSTASH_REDIS_REST_URL ?? env.KV_REST_API_URL;
-  const token = env.UPSTASH_REDIS_REST_TOKEN ?? env.KV_REST_API_TOKEN;
+  const { url, token } = findUpstash(env);
   let fetchError: string | null = null;
   return handle(request, env as Env, {
     // Edge runtimes don't all implement the browser-only `cache`/`credentials` fields or
