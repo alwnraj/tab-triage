@@ -122,3 +122,16 @@ Re-recorded with the real classifier: 26 of 30 grouped, 1.6 s, $0.00075 for 30 c
 ## 13. A quieter popup
 
 The user found the redesigned popup too busy. The threshold stepper, preset chips and metrics footer are gone: the popup is Sort, Undo, a settings button, two summary counts and the results. The threshold is now a slider on the Options page, beside a "Last sort" line with latency, cost, tokens and calls read from the most recent report. This departs from the original brief, which put the slider and the latency/cost footer in the popup; the user asked for it, and both still exist one click away. Mock runs still show a MOCK line in the popup. Per-tab reasons are shorter ("Not sure which group · leaned Research"). Re-recorded with the real classifier: 25 of 30 grouped, 3.5 s, $0.00073.
+
+## 14. Hosted service: no key for users
+
+To publish for anyone, the TypeSafe key moved to a server: a key shipped inside an extension can be extracted by anyone who installs it, and TypeSafe's own guidance is to keep keys server-side. `proxy/` is one Vercel Edge Function, built to Vercel's Build Output API by `scripts/build-proxy.mjs`, plus a landing page and a privacy policy.
+
+Design choices:
+- **Narrow on purpose.** The service accepts only `{site, title, groups, order}` and builds the TypeSafe questions with the same `buildRequest()`, so the endpoint can't be used as a free general-purpose TypeSafe API.
+- **Abuse limits:** request shape and size; an origin check (web pages refused, with an optional allow-list once the Web Store id exists); per-install and per-IP rate limits; and a daily dollar cap on input tokens. The last two use Upstash Redis and fail open on a Redis outage (logged), so a limiter blip doesn't take sorting down.
+- **One upstream call per request.** The extension already retries with backoff; retrying on the server too would multiply load during an incident.
+- **Privacy:** no hostnames or titles in logs; rate-limit keys are salted hashes that expire in a minute; the install id is random.
+- The extension's `HostedClassifier` shares its retry/timeout code with the TypeSafe client (`providers/http.ts`); the refactor kept all 21 existing provider tests passing unchanged. The API-key card is gone, and an update removes any saved key. The service URL is a build-time constant that also writes the manifest's single host permission.
+
+Verified locally: 14 new unit tests for the service and client, and a real sort of 6 tabs in Chromium through the built service running locally with the key (5 grouped, $0.00013), with a service log of outcome, status and timing only. Not yet deployed: the Vercel connector in this session can't create projects (403), so the import and the production key are set in the Vercel dashboard (proxy/README.md).

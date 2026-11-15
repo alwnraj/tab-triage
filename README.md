@@ -9,7 +9,7 @@ A Chrome extension that sorts your open tabs into **native Chrome tab groups**, 
 ## What it does
 
 1. **Toolbar popup.** Kept deliberately small: **Sort tabs**, **Undo**, and a settings button. Sort asks the classifier about the tabs in the current window and moves the confident ones into colored, named groups. The results list shows the tabs it left alone first, each with its probability and why, then the grouped ones. The popup updates live while a sort runs.
-2. **Options page.** Here you set the **confidence threshold** (default 0.80) and define your groups (name, color, a plain-language description that serves as the classification criterion, and an optional domain list). You also set your API key and a domain blocklist, and there's a plain **"what gets sent"** panel. A **"Last sort"** line shows the measured latency and the estimated cost of the most recent run, worked out from the input tokens the API reports.
+2. **Options page.** Here you set the **confidence threshold** (default 0.80) and define your groups (name, color, a plain-language description that serves as the classification criterion, and an optional domain list). You also set a domain blocklist, and there's a plain **"what gets sent"** panel. A **"Last sort"** line shows the measured latency and the estimated cost of the most recent run, worked out from the input tokens the API reports.
 3. **Undo** restores each tab's original position and group, including groups you had made yourself before sorting.
 
 ## Install (load unpacked)
@@ -22,7 +22,7 @@ npm ci
 npm run build
 ```
 
-Then open `chrome://extensions`, turn on **Developer mode**, click **Load unpacked** and select the `dist/` folder. The first time it runs, the Options page opens a consent screen. Sorting stays off until you accept it, and you need to paste a [TypeSafe](https://docs.typesafe.ai) API key there.
+Then open `chrome://extensions`, turn on **Developer mode**, click **Load unpacked** and select the `dist/` folder. The first time it runs, the Options page opens a consent screen, and sorting stays off until you accept it. No account or API key is needed: the extension calls the hosted tab-triage service, which holds the [TypeSafe](https://docs.typesafe.ai) key (see [Hosted service](#hosted-service)).
 
 ## How a tab gets sorted (the funnel)
 
@@ -51,8 +51,9 @@ More detail in [docs/DESIGN.md](docs/DESIGN.md). The build history and the reaso
 | **Sent per tab** | the hostname only (no path, query or fragment) and the title cut to 120 characters. A title that is really a URL (untitled or loading tabs) is sent as an empty string. |
 | **Sent with each request** | your group keys and descriptions. Colors and domain lists stay local. |
 | **Never sent** | full URLs, page content, cookies, history; pinned tabs; incognito windows; `chrome://`, extension and file pages; localhost, IP addresses and intranet names; blocklisted domains; tabs matched by your domain rules. |
-| **Stored locally** | answers cached for 7 days under a SHA-256 key of (hostname, title, groups hash, model, prompt version, order). The cached value holds only probabilities, no hostname or title. The API key lives in `chrome.storage.local`, is sent only to `api.typesafe.ai`, and is never logged. |
-| **Permissions** | `tabs`, `tabGroups`, `storage`, and the host `https://api.typesafe.ai/*`. Nothing else. A strict extension CSP. |
+| **Stored locally** | answers cached for 7 days under a SHA-256 key of (hostname, title, groups hash, model, prompt version, order). The cached value holds only probabilities, no hostname or title. Plus a random install id, sent only for rate limiting. |
+| **Who receives it** | the tab-triage service (`proxy/`, on Vercel), which forwards hostname, title and group descriptions to TypeSafe and logs or stores none of them. [Privacy policy](site/privacy.html). |
+| **Permissions** | `tabs`, `tabGroups`, `storage`, and the service's host. Nothing else. A strict extension CSP. |
 
 TypeSafe is a third party. See its [legal and data-handling pages](https://docs.typesafe.ai/legal.md).
 
@@ -76,7 +77,11 @@ TypeSafe charges per input token; output tokens are free. The price is one const
 
 `npm run demo` records the real extension in a headed Chromium with a **fresh temporary profile** (none of your tabs, bookmarks or accounts), opening ~30 public, logged-out pages from [`demo/urls.json`](demo/urls.json), six of which are deliberately ambiguous (marked in the file). It captures the screen with ffmpeg (avfoundation on macOS, x11grab under Xvfb on Linux), so the **real tab strip** is in frame, unlike Playwright's page-only `recordVideo`. The popup is Chrome's real toolbar dropdown, opened with `chrome.action.openPopup()`. Playwright can't click inside an action popup, so the script starts the sort and the undo through the extension's worker, and the open popup updates itself live from the run state, as it does for a user. Captions and cards are rendered as images, and the end card's latency, cost and percent-sorted figures are read from that run's own report. The published video uses the real classifier. `--mock` is for rehearsal only: every caption carries a red MOCK badge, and the committed GIF and poster can only be written by a real-classifier run.
 
-Before recording on macOS, turn on **Do Not Disturb** and close anything that might pop up. avfoundation captures the whole screen. The edit crops to the browser window and writes `demo/out/frame-check.png`. **Look at it before committing the GIF**: with several displays, "Capture screen 0" may not be the screen Chromium opened on. The raw capture is deleted when the run ends, also when editing fails. In a real run the API key is kept out of the processes the script starts and written only into the throwaway profile. It is removed from the extension's storage as soon as the sort finishes, but that is a logical delete: the real protection is that the profile is deleted on exit (including Ctrl-C), and the next run sweeps any profile a crashed run left behind. The script also checks that screen capture works before it starts, and a real run stops if any page serves a bot check.
+Before recording on macOS, turn on **Do Not Disturb** and close anything that might pop up. avfoundation captures the whole screen. The edit crops to the browser window and writes `demo/out/frame-check.png`. **Look at it before committing the GIF**: with several displays, "Capture screen 0" may not be the screen Chromium opened on. The raw capture is deleted when the run ends, also when editing fails. A real run uses the hosted service, so no key goes into the browser profile. The profile is still deleted on exit (including Ctrl-C), and the next run sweeps any profile a crashed run left behind. The script also checks that screen capture works before it starts, and a real run stops if any page serves a bot check.
+
+## Hosted service
+
+The extension calls a small service in [`proxy/`](proxy/README.md): one Vercel Edge Function that holds the TypeSafe key. It accepts only tab-triage's request shape and builds the questions itself, so it can't be used as a general TypeSafe proxy. It checks the origin, rate-limits per install and per IP, and stops for the day at a spending cap. It never logs titles or hostnames. Setup, limits and local testing are in [proxy/README.md](proxy/README.md).
 
 ## API key for the scripts
 
