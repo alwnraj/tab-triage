@@ -120,6 +120,11 @@ try {
     urls.map((u, i) => pages[i]!.goto(u, { waitUntil: "domcontentloaded", timeout: 25_000 }).catch(() => console.warn(`  (slow or failed: ${u})`))),
   );
   await sleep(2500);
+  // Bot-check interstitials make bad demo tabs; name them so urls.json can be fixed.
+  for (const [i, p] of pages.entries()) {
+    const title = await p.title().catch(() => "");
+    if (/just a moment|attention required|verify you are human|access denied|are you a robot/i.test(title)) console.warn(`  (bot check: ${urls[i]} → "${title}")`);
+  }
   await sw.evaluate(async (wid) => {
     const tabs = await chrome.tabs.query({ windowId: wid });
     await chrome.tabs.update(tabs[0]!.id!, { active: true });
@@ -172,12 +177,20 @@ try {
       const size = { width: 430, height: Math.min(640, b.height - 60) };
       // Headless has a tiny virtual screen, so let Chrome place it there.
       const pos = headless ? {} : { left: b.left + b.width - 450, top: b.top + 78 };
-      await chrome.windows.create({ url, type: "popup", ...size, ...pos });
+      const w = await chrome.windows.create({ url, type: "popup", ...size, ...pos });
+      // macOS Chrome can open the popup at the size of the last normal window, covering the
+      // tab strip, so set the bounds again explicitly once it exists.
+      if (!headless) await chrome.windows.update(w!.id!, { ...size, ...pos });
     },
     { url: `chrome-extension://${extId}/popup.html?window=${windowId}`, b: bounds, headless: HEADLESS },
   );
   const popup = await popupPromise;
   await popup.waitForLoadState("domcontentloaded");
+  const popupBounds = await sw.evaluate(async () => {
+    const [w] = await chrome.windows.getAll({ windowTypes: ["popup"] });
+    return w ? { left: w.left, top: w.top, width: w.width, height: w.height } : null;
+  });
+  console.log(`[demo] popup window ${JSON.stringify(popupBounds)}`);
   mark("popup");
   await sleep(2000);
 

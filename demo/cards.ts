@@ -29,8 +29,10 @@ export async function titleCard(page: Page, path: string, mode: string) {
 export async function caption(page: Page, path: string, text: string, sub?: string) {
   await shot(
     page,
-    `<div style="position:absolute;left:0;right:0;bottom:56px;display:flex;justify-content:center">
-      <div style="background:rgba(16,20,24,.88);color:#fff;border-radius:18px;padding:22px 40px;max-width:1500px;text-align:center;box-shadow:0 8px 30px rgba(0,0,0,.35)">
+    // Centred over the page area left of the popup window (which covers about the right 35%
+    // of the frame), so the caption never hides the popup's latency/cost footer.
+    `<div style="position:absolute;left:0;right:700px;bottom:56px;display:flex;justify-content:center">
+      <div style="background:rgba(16,20,24,.88);color:#fff;border-radius:18px;padding:22px 40px;max-width:1140px;text-align:center;box-shadow:0 8px 30px rgba(0,0,0,.35)">
         <div style="font-size:46px;font-weight:700">${esc(text)}</div>
         ${sub ? `<div style="font-size:30px;color:#c4c7c5;margin-top:8px">${esc(sub)}</div>` : ""}
       </div>
