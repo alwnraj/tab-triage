@@ -1,0 +1,20 @@
+body { width: 400px; }
+main { padding: 12px; }
+header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; font-size: 14px; }
+header a { font-size: 12px; }
+.controls { display: flex; gap: 8px; }
+.controls #sort { flex: 1; padding: 8px 12px; }
+.slider { display: block; margin: 12px 0 4px; }
+.slider span { display: flex; justify-content: space-between; color: var(--muted); }
+.slider output { color: var(--text); font-variant-numeric: tabular-nums; font-weight: 600; }
+.slider input { width: 100%; accent-color: var(--accent); }
+#results { list-style: none; margin: 8px 0 0; padding: 0; max-height: 360px; overflow-y: auto; }
+#results li {
+  display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; padding: 6px 2px; border-top: 1px solid var(--line);
+}
+#results .title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#results .prob { font-variant-numeric: tabular-nums; text-align: right; }
+#results .where { grid-column: 1 / -1; color: var(--muted); font-size: 12px; }
+#results li.ungrouped .title { color: var(--muted); }
+#results h3 { margin: 10px 0 2px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
+footer { margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--line); font-size: 12px; font-variant-numeric: tabular-nums; }

@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>tab-triage</title>
+  <link rel="stylesheet" href="common.css">
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <main>
+    <header>
+      <strong>tab-triage</strong>
+      <a id="options" href="#" class="muted">Options</a>
+    </header>
+
+    <section id="consent" class="banner warn hidden">
+      Before the first sort, review what gets sent to the classifier.
+      <button id="open-consent">Review and accept</button>
+    </section>
+
+    <section class="controls">
+      <button id="sort" class="primary">Sort tabs</button>
+      <button id="undo" disabled>Undo</button>
+    </section>
+
+    <label class="slider">
+      <span>Confidence threshold <output id="tval">0.80</output></span>
+      <input id="threshold" type="range" min="0.5" max="0.95" step="0.05" value="0.8">
+    </label>
+
+    <div id="message" class="banner hidden" role="status" aria-live="polite"></div>
+
+    <ol id="results" aria-label="Results"></ol>
+
+    <footer id="footer" class="muted"></footer>
+  </main>
+  <script src="popup.js" type="module"></script>
+</body>
+</html>

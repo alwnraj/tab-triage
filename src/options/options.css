@@ -1,0 +1,22 @@
+main { max-width: 760px; margin: 0 auto; padding: 24px 16px 64px; }
+h1 { font-size: 22px; margin: 0 0 16px; }
+h2 { font-size: 15px; margin: 0 0 8px; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; margin: 0 0 14px; }
+.consent { border-color: var(--accent); }
+.row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.row input[type="password"] { flex: 1; min-width: 200px; }
+textarea { width: 100%; }
+pre {
+  background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 10px;
+  overflow-x: auto; font-size: 12px; max-height: 320px;
+}
+.sent-list { padding-left: 18px; margin: 0 0 8px; }
+.sent-list li { margin: 4px 0; }
+.group {
+  display: grid; grid-template-columns: 1fr 110px auto; gap: 6px; padding: 10px 0; border-top: 1px solid var(--line);
+}
+.group:first-child { border-top: 0; }
+.group textarea, .group .domains { grid-column: 1 / -1; }
+.group .domains { width: 100%; }
+label { line-height: 1.9; }
+@media (max-width: 520px) { .group { grid-template-columns: 1fr; } }

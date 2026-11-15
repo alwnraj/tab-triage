@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>tab-triage options</title>
+  <link rel="stylesheet" href="common.css">
+  <link rel="stylesheet" href="options.css">
+</head>
+<body>
+  <main>
+    <h1>tab-triage</h1>
+
+    <section id="consent-box" class="card consent hidden">
+      <h2>Before your first sort</h2>
+      <p>When you press <strong>Sort</strong>, tab-triage sends a small amount of data about each eligible tab to
+        <strong>TypeSafe</strong> (<code>api.typesafe.ai</code>), a third-party classification API, using your own API key.
+        The panel below shows exactly what. Tabs that match one of your domain rules are grouped locally and are never sent.</p>
+      <button id="accept" class="primary">I understand, enable sorting</button>
+    </section>
+    <p id="consent-done" class="muted hidden">Sorting enabled on <span id="consent-date"></span>. <button id="revoke">Revoke</button></p>
+
+    <section class="card">
+      <h2>What gets sent</h2>
+      <ul class="sent-list">
+        <li><strong>Sent per tab:</strong> the site's hostname (no path, query or fragment) and the tab title cut to 120 characters.</li>
+        <li><strong>Sent with every request:</strong> your group keys and descriptions below (group colours and domain lists stay local).</li>
+        <li><strong>Never sent:</strong> full URLs, page content, cookies, history, tab ids; pinned tabs; tabs in incognito windows;
+          <code>chrome://</code>, extension and file pages; localhost, IP addresses and intranet names; anything on your blocklist.</li>
+        <li><strong>Stored locally:</strong> answers cached for 7 days under a hash key (no hostname or title stored); the API key in this browser's extension storage.</li>
+      </ul>
+      <p class="muted">Example request built by the same code the extension uses:</p>
+      <pre id="example" aria-label="Example request"></pre>
+    </section>
+
+    <section class="card">
+      <h2>Groups</h2>
+      <p class="muted">The description is the classification criterion, written in plain language. Domains (optional, comma-separated) are matched locally first; a group with domains and no description is never sent to the API.</p>
+      <div id="groups"></div>
+      <button id="add-group">Add group</button>
+    </section>
+
+    <section class="card">
+      <h2>API key</h2>
+      <p class="muted">Your TypeSafe key. Stored only in this browser's extension storage, sent only to <code>api.typesafe.ai</code>.</p>
+      <div class="row">
+        <input id="api-key" type="password" autocomplete="off" spellcheck="false" placeholder="Paste key">
+        <button id="save-key">Save key</button>
+        <button id="clear-key">Remove</button>
+      </div>
+      <p id="key-status" class="muted"></p>
+    </section>
+
+    <section class="card">
+      <h2>Blocklist</h2>
+      <p class="muted">One domain per line. These tabs (and their subdomains) are never sent or moved.</p>
+      <textarea id="blocklist" rows="4" spellcheck="false" placeholder="mybank.com"></textarea>
+    </section>
+
+    <section class="card">
+      <h2>Behaviour</h2>
+      <label><input id="collapse" type="checkbox"> Collapse groups after sorting</label><br>
+      <label><input id="mock" type="checkbox"> <span class="mock-tag">Mock mode</span> — keyword matcher for rehearsal, no API calls. Results are labelled MOCK.</label>
+    </section>
+
+    <section class="card">
+      <h2>Data</h2>
+      <button id="clear-cache">Clear cached answers</button>
+      <button id="export">Export open tabs for labelling</button>
+      <p class="muted">The export contains hostname and 120-character title only, with the same filters as above. It is for <code>npm run eval:label</code>; keep it out of git.</p>
+      <p id="data-status" class="muted"></p>
+    </section>
+
+    <p id="saved" class="muted" role="status" aria-live="polite"></p>
+  </main>
+  <script src="options.js" type="module"></script>
+</body>
+</html>
