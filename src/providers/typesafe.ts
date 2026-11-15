@@ -116,6 +116,10 @@ export class TypeSafeClassifier implements Classifier {
           headers: { "content-type": "application/json", authorization: `Bearer ${this.#apiKey}` },
           body,
           signal: ctrl.signal,
+          // Never follow a redirect with the bearer token, send no cookies, cache nothing.
+          redirect: "error",
+          credentials: "omit",
+          cache: "no-store",
         });
         if (res.ok) {
           let json: unknown;

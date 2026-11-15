@@ -15,7 +15,7 @@
       <h2>Before your first sort</h2>
       <p>When you press <strong>Sort</strong>, tab-triage sends a small amount of data about each eligible tab to
         <strong>TypeSafe</strong> (<code>api.typesafe.ai</code>), a third-party classification API, using your own API key.
-        The panel below shows exactly what. Tabs that match one of your domain rules are grouped locally and are never sent.</p>
+        The panel below shows exactly what. Titles can contain personal text (a name, an email subject), so blocklist sites whose titles you don't want sent. Tabs that match one of your domain rules are grouped locally and are never sent.</p>
       <button id="accept" class="primary">I understand, enable sorting</button>
     </section>
     <p id="consent-done" class="muted hidden">Sorting enabled on <span id="consent-date"></span>. <button id="revoke">Revoke</button></p>
@@ -67,7 +67,7 @@
       <h2>Data</h2>
       <button id="clear-cache">Clear cached answers</button>
       <button id="export">Export open tabs for labelling</button>
-      <p class="muted">The export contains hostname and 120-character title only, with the same filters as above. It is for <code>npm run eval:label</code>; keep it out of git.</p>
+      <p class="muted">The export contains hostname and 120-character title only, with the same filters as sorting (pinned, incognito, local and blocklisted tabs are left out; tabs already in a group are included). It is for <code>npm run eval:label</code>; keep it out of git.</p>
       <p id="data-status" class="muted"></p>
     </section>
 

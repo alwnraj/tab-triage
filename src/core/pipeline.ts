@@ -134,7 +134,7 @@ export async function classifyTabs(a: ClassifyArgs): Promise<ClassifyOutcome> {
   );
 
   // If every model call was rejected, the problem is the setup (e.g. a retired model id), not the tabs.
-  if (!error && toAsk.length > 0 && metrics.tabErrors === toAsk.length) error = new ClassifierError("bad_request", undefined, toAsk.length);
+  if (!error && toAsk.length > 0 && metrics.tabErrors === toAsk.length) error = new ClassifierError("bad_request");
 
   metrics.grouped = results.filter((r) => r.decision?.groupId).length;
   return { results, metrics, error };

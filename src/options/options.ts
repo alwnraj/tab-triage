@@ -87,7 +87,7 @@ async function exportTabs() {
   const rows = [];
   for (const t of tabs) {
     if (wins.get(t.windowId) || typeof t.id !== "number") continue;
-    const e = toTabInput({ id: t.id, index: t.index, windowId: t.windowId, groupId: -1, pinned: false, url: t.url, title: t.title }, s.blocklist);
+    const e = toTabInput({ id: t.id, index: t.index, windowId: t.windowId, groupId: -1, pinned: t.pinned, url: t.url, title: t.title }, s.blocklist);
     if (e.ok) rows.push(e.input);
   }
   const blob = new Blob([JSON.stringify({ exportedAt: new Date().toISOString(), tabs: rows }, null, 2)], { type: "application/json" });
