@@ -42,24 +42,24 @@ popup ──{sort, windowId, threshold}──▶ service worker
     "group": {
       "type": "choice",
       "instructions": "Which of these tab groups does the browser tab described by `site` and `title` belong in?",
-      "criteria": { "g_research": "<user description>", "g_shopping": "<user description>" }
+      "criteria": { "research": "<user description>", "shopping": "<user description>" }
     },
     "fits": {
       "type": "noul",
       "instructions": {
         "question": "Does the browser tab described by `site` and `title` clearly belong in one of `groups`?",
-        "groups": { "g_research": "<description>", "...": "..." }
+        "groups": { "research": "<description>", "...": "..." }
       },
       "criteria": {
         "true": "The tab plainly matches the description of one of the groups.",
-        "false": "The tab matches none of the groups, or only loosely."
+        "false": "The tab is about a topic that none of the group descriptions cover."
       }
     }
   }
 }
 ```
 
-- **Option keys** are slugs built as `g_` + a lowercase ASCII slug of the group name, de-duplicated with `_2`, `_3`. The `g_` prefix keeps keys from looking like integers, because JavaScript orders integer-like keys first and that would quietly undo the reversal (for example a group named "2024"). The key is mapped back to the group id in code. Probabilities are read **by key** and never by position.
+- **Option keys** are a lowercase ASCII slug of the group name (`research`), de-duplicated with `_2`, `_3`. Option names are sent to the model, so they stay plain descriptive words. Only an all-digit name gets a `g_` prefix (`g_2024`), because JavaScript orders integer-like keys first and that would quietly undo the reversal. (Until prompt version `p2`, every key had the prefix.) The key is mapped back to the group id in code. Probabilities are read **by key** and never by position.
 - **The state is kept minimal.** The model-jaggedness doc says unrelated content in `state` costs accuracy, so it holds only the hostname and title.
 - **Zero model-eligible groups means no API call.** This is the case when every group is domain-only, or there are no groups.
 

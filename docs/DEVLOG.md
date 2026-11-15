@@ -73,3 +73,18 @@ Not acted on, and why:
 - **CI actions pinned by tag, not SHA.** Read-only permissions and no secrets, so the risk is low; left as is.
 - **Multi-monitor capture.** Documented: the README now says to look at `frame-check.png` before committing the GIF.
 
+## 9. Checked against TypeSafe's own skill
+
+TypeSafe publishes an agent skill (`typesafe-ai/skills`, v0.6.2) with integration guidance. I installed it and checked tab-triage against it. Most of the design already matches: judgments from the model and the decision in code (the funnel and `decide.ts`), a companion Noul instead of a "none" option, probabilities rather than `confidence` as the gate, reordering options to check for order bias, all question wording in one module (`request.ts`), the exact payload shown to the user, and failed calls surfaced as errors rather than as "no".
+
+Changed:
+- **Option names.** The skill says option names are sent to the model and descriptive names help, while prefixes and positional names give it nothing. Keys are now plain slugs (`research`). Only an all-digit name keeps the `g_` prefix the reversal needs. `PROMPT_VERSION` went to `p2`, so old cached answers aren't reused.
+- **The Noul's `false` criterion** was "matches none of the groups, or only loosely": a negation joined by an "or". The skill recommends a concrete situation and one judgment, so it now reads "The tab is about a topic that none of the group descriptions cover."
+
+Kept, with reasons:
+- **One threshold for the Choice and the Noul.** The skill suggests starting a Noul at 0.7/0.3 and giving the middle band its own outcome. Here every Noul below the threshold, including the middle band, means "leave the tab alone", which is a defined outcome, and the popup has a single slider. The eval's Noul reliability bins will show whether the Noul needs a separate threshold.
+- **The API key lives in the browser.** The skill recommends keeping keys on a server. This is a bring-your-own-key extension with no server, so the key stays in `chrome.storage.local`, is sent only to `api.typesafe.ai`, and never appears in the UI or logs.
+- **Titles truncated to 120 characters and only the hostname sent.** The skill warns that truncation can remove context. Here it's a privacy requirement, and a tab title rarely runs longer.
+
+The skill also says to get permission and a budget before probing the live API, and to disclose what data is sent. No live call has been made yet.
+

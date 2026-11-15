@@ -42,7 +42,7 @@ Each concept has what it is, where it lives in this repo, and the question you'r
 
 **Here.** In the band just above the threshold (t ≤ p < t + 0.1), `src/core/pipeline.ts` re-asks with both the Choice options *and* the Noul's group list reversed, and groups the tab only if the top pick doesn't change. Two details matter:
 - the reversed answer can only *veto*; it never rescues a tab that already failed, and
-- the option keys are prefixed `g_` because JavaScript sorts integer-like object keys first, so a group named "2024" would silently undo the reversal.
+- a group whose name is all digits gets its key prefixed (`g_2024`), because JavaScript sorts integer-like object keys first, which would silently undo the reversal. Other keys stay plain words, because option names are sent to the model and descriptive names help it.
 
 **Likely question.** *"How do you know the reversal does anything?"* The eval records how often the forward and reversed distributions are **identical**. If that's 100%, the server isn't honouring key order, and the check is a no-op I'd have to redesign (for example, by shuffling the option names themselves).
 
