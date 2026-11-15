@@ -145,8 +145,8 @@ const page = await browser.newPage();
 async function render(w: number, h: number, body: string, svg: string, path: string) {
   await page.setViewportSize({ width: w, height: h });
   await page.setContent(`<!doctype html><meta charset="utf-8">
-    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&display=block" rel="stylesheet">
-    <style>html,body{margin:0;width:${w}px;height:${h}px;overflow:hidden;background:${PAPER};color:${INK};font-family:Caveat,cursive}
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;700;800&display=block" rel="stylesheet">
+    <style>html,body{margin:0;width:${w}px;height:${h}px;overflow:hidden;background:${PAPER};color:${INK};font-family:Nunito,sans-serif}
     body{position:relative}</style>${body}
     <svg width="${w}" height="${h}" style="position:absolute;inset:0">${svg}</svg>`);
   await page.waitForLoadState("networkidle");
@@ -160,9 +160,9 @@ const FH = Math.round((860 * FW) / 1920);
 const [FX, FY] = [90, 236];
 
 await render(1280, 800,
-  text("sorts your tabs into groups", 90, 48, 64, "font-weight:700") + text("…only the ones it's sure about", 110, 124, 40) +
-    text("and tells you about the rest", 860, 92, 34) + img(shots.sorted, FX, FY, FW, FH),
-  arrow([470, 180], [400, FY - 16], 0.25, 11) + arrow([1010, 136], [930, FY - 16], 0.12, 21) + inkFrame(FX, FY, FW, FH, 31),
+  text("Sorts your tabs into groups", 90, 52, 46, "font-weight:800") + text("Only the ones it's sure about", 92, 114, 28) +
+    text("And tells you about the rest", 850, 98, 24) + img(shots.sorted, FX, FY, FW, FH),
+  arrow([440, 162], [400, FY - 16], 0.25, 11) + arrow([1000, 136], [930, FY - 16], 0.12, 21) + inkFrame(FX, FY, FW, FH, 31),
   join(OUT, "screenshot-1.png"));
 
 // The popup crop is 520×896; shown 640 tall.
@@ -170,20 +170,20 @@ const PH = 640;
 const PW = Math.round((520 * PH) / 896);
 const [PX, PY] = [760, 80];
 await render(1280, 800,
-  text("not sure?", 90, 210, 72, "font-weight:700") + text("it leaves the tab alone,<br>and tells you why", 96, 300, 46) +
-    text("no account, no api key.<br>just press sort.", 96, 560, 34, "opacity:.8") + img(shots.popup, PX, PY, PW, PH),
-  arrow([560, 340], [PX - 14, PY + 190], -0.12, 41) + inkFrame(PX, PY, PW, PH, 51),
+  text("Not sure?", 90, 220, 56, "font-weight:800") + text("It leaves the tab alone,<br>and tells you why.", 92, 300, 32, "line-height:1.3") +
+    text("No account, no API key.<br>Just press Sort.", 92, 560, 24, "line-height:1.35;opacity:.75") + img(shots.popup, PX, PY, PW, PH),
+  arrow([520, 330], [PX - 14, PY + 190], -0.12, 41) + inkFrame(PX, PY, PW, PH, 51),
   join(OUT, "screenshot-2.png"));
 
 await render(1280, 800,
-  text("before: thirty tabs, no order", 90, 60, 64, "font-weight:700") + img(shots.messy, FX, FY, FW, FH),
-  arrow([700, 112], [540, FY - 16], 0.22, 61) + inkFrame(FX, FY, FW, FH, 71),
+  text("Before: thirty tabs, no order", 90, 60, 46, "font-weight:800") + img(shots.messy, FX, FY, FW, FH),
+  arrow([640, 128], [540, FY - 16], 0.22, 61) + inkFrame(FX, FY, FW, FH, 71),
   join(OUT, "screenshot-3.png"));
 
 await render(1280, 800,
-  text("undo puts every tab back", 90, 48, 64, "font-weight:700") + text("even the groups you made yourself", 110, 124, 40) +
+  text("Undo puts every tab back", 90, 52, 46, "font-weight:800") + text("Even the groups you made yourself", 92, 114, 28) +
     img(shots.undone, FX, FY, FW, FH),
-  arrow([520, 180], [450, FY - 16], 0.25, 81) + inkFrame(FX, FY, FW, FH, 91),
+  arrow([480, 162], [440, FY - 16], 0.25, 81) + inkFrame(FX, FY, FW, FH, 91),
   join(OUT, "screenshot-4.png"));
 
 // The Options crop is 800×1000; shown 640 tall.
@@ -191,20 +191,20 @@ const OH = 640;
 const OW = Math.round((800 * OH) / 1000);
 const [OX, OY] = [660, 80];
 await render(1280, 800,
-  text("you write the groups.", 90, 230, 60, "font-weight:700") + text("and you can see exactly<br>what gets sent", 96, 310, 44) +
+  text("You write<br>the groups.", 90, 196, 46, "font-weight:800;line-height:1.15") + text("And you can see exactly<br>what gets sent.", 92, 320, 32, "line-height:1.3") +
     img(opt, OX, OY, OW, OH),
-  arrow([520, 400], [OX - 18, OY + 150], -0.15, 101) + inkFrame(OX, OY, OW, OH, 111),
+  arrow([470, 340], [OX - 18, OY + 150], -0.15, 101) + inkFrame(OX, OY, OW, OH, 111),
   join(OUT, "screenshot-5.png"));
 
 await render(440, 280,
-  text("tab-triage", 40, 62, 84, "font-weight:700") + text("sorts your tabs, only when it's sure", 44, 200, 30),
+  text("tab-triage", 40, 66, 64, "font-weight:800;letter-spacing:-1px") + text("Sorts your tabs, only when it's sure", 44, 196, 20),
   scribbles(46, 170, 50, 14, 9, 121),
   join(OUT, "promo-small.png"));
 
 const MH = 470;
 const MW = Math.round((520 * MH) / 896);
 await render(1400, 560,
-  text("tab-triage", 100, 150, 130, "font-weight:700") + text("sorts your tabs into groups,<br>only when it's sure. undo anytime.", 106, 340, 44) +
+  text("tab-triage", 100, 150, 104, "font-weight:800;letter-spacing:-2px") + text("Sorts your tabs into groups,<br>only when it's sure. Undo anytime.", 106, 340, 34, "line-height:1.3") +
     img(shots.popup, 1400 - 120 - MW, 45, MW, MH),
   scribbles(108, 305, 78, 18, 13, 131) + inkFrame(1400 - 120 - MW, 45, MW, MH, 141),
   join(OUT, "promo-marquee.png"));
