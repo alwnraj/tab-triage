@@ -88,3 +88,19 @@ Kept, with reasons:
 
 The skill also says to get permission and a budget before probing the live API, and to disclose what data is sent. No live call has been made yet.
 
+
+## 10. First live API probe
+
+`npm run probe` sent 13 requests to `jev-1.14.0`: 11 public demo pages, with two of them also asked in reversed order. The key came from a gitignored `.env` (`scripts/env.ts`, which tolerates `KEY= "value"`), and nothing about it was printed. This is a smoke test with 11 cases I picked, **not an accuracy result**: the eval with real labels is still pending.
+
+What it settled:
+- **The request and response shapes are right.** The API accepted the extension's exact payload (structured Noul instructions included) and every response parsed: `{model, answers, usage}`. A bad key returns a 401 with `authentication_error`, which the provider reports as an error.
+- **Cost and speed.** About 600 input tokens per request, $0.000326 for all 13 (≈ $0.000025 per tab), median latency 109 ms (89–187).
+- **The companion Noul earns its place.** timeanddate.com's Choice said *research* at 0.92, but the Noul said 0.09, so the tab was left alone; weather.gov likewise (Choice *news* 0.68, Noul 0.13). Without the Noul, both would have been filed confidently into the wrong group.
+- **The server honours option order, so the reversal check isn't a no-op.** Reversed distributions differed: Maillard reaction *research* 0.77 → 0.84; Hacker News *news* 0.94 → 0.89.
+
+All six representative tabs were grouped correctly, with Choice ≥ 0.99 and Noul ≥ 0.98. The three hard ones: Hacker News → news; Maillard reaction left alone (research 0.77 < 0.8); Wirecutter left alone (shopping 0.91 but Noul 0.77). Nothing was grouped wrongly.
+
+Noted, not acted on (one probe is too few cases to tune on, which TypeSafe's skill also warns against):
+- **The Noul moves with group order too:** Hacker News 0.84 forward, 0.70 reversed. The decision rule only checks the reversed *top choice*, not the reversed Noul. If the eval shows this often, the reversed Noul should have to pass as well.
+- **Wirecutter's Noul of 0.77** would pass the 0.7 starting point the skill suggests for a Noul but not the shared 0.8. Whether the Noul needs its own threshold is a question for the eval's reliability bins.
