@@ -11,6 +11,19 @@ export const PRICE_USD_PER_INPUT_TOKEN = 0.042 / 1_000_000;
 export const MODEL_ID = "jev-1.14.0";
 export const API_BASE = "https://api.typesafe.ai";
 
+/**
+ * The hosted tab-triage service (proxy/), which holds the TypeSafe key so users
+ * don't need one. Overridable at build time (TAB_TRIAGE_SERVICE=… npm run build)
+ * for a staging or local server; scripts/build.mjs also writes it into the
+ * manifest's host_permissions.
+ */
+declare const __SERVICE_URL__: string | undefined;
+export const SERVICE_URL: string = typeof __SERVICE_URL__ === "string" ? __SERVICE_URL__ : "https://tab-triage.vercel.app";
+
+/** Limits the service enforces on each request (shared by the client and proxy/). */
+export const MAX_GROUPS = 12;
+export const MAX_DESCRIPTION = 500;
+
 /** Bump when the wording of the questions changes; part of the cache key. */
 export const PROMPT_VERSION = "p2";
 

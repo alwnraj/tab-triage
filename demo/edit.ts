@@ -21,7 +21,7 @@ export interface RunLog {
 export async function edit(raw: string, log: RunLog, report: SortReport, opts: { mock: boolean; keepRaw?: boolean }) {
   // Either signal marks the run as a rehearsal; the committed assets need both to say "real".
   const MOCK = opts.mock || report.mock;
-  if (!MOCK && !report.classifierId.startsWith("typesafe:")) throw new Error(`Refusing to write the published demo from classifier ${report.classifierId}`);
+  if (!MOCK && !/^(typesafe|hosted):/.test(report.classifierId)) throw new Error(`Refusing to write the published demo from classifier ${report.classifierId}`);
   const PREFIX = MOCK ? "rehearsal-" : "";
   console.log("[demo] editing…");
   const [rw] = run("ffprobe", ["-v", "error", "-select_streams", "v:0", "-show_entries", "stream=width,height", "-of", "csv=p=0", raw]).trim().split(",").map(Number);
@@ -30,7 +30,7 @@ export async function edit(raw: string, log: RunLog, report: SortReport, opts: {
   const b = log.bounds;
   const crop = `crop=${even(b.width * k)}:${even(b.height * k)}:${even(b.left * k)}:${even(b.top * k)},scale=1920:1080:flags=lanczos,setsar=1`;
   const e = log.events;
-  const mode = report.mock ? "MOCK classifier (rehearsal)" : `real classifier: TypeSafe ${report.classifierId.replace("typesafe:", "")}`;
+  const mode = report.mock ? "MOCK classifier (rehearsal)" : `real classifier: TypeSafe ${report.classifierId.replace(/^(typesafe|hosted):/, "")}`;
 
   const browser = await chromium.launch({ executablePath: chromiumPath() });
   const page = await browser.newPage();

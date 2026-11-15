@@ -6,7 +6,7 @@ import type { ModelGroup, Order, RawAnswer, TabInput } from "../core/types.js";
  * request/response onto RawAnswer.
  */
 export interface Classifier {
-  /** e.g. "typesafe:jev-1.14.0" or "mock". Shown in the UI and logs. */
+  /** e.g. "typesafe:jev-1.14.0", "hosted:jev-1.14.0" or "mock". Shown in the UI and logs. */
   readonly id: string;
   /** Model id used in cache keys. */
   readonly model: string;
@@ -24,34 +24,38 @@ export type ClassifierErrorKind =
   | "network"
   | "server"
   | "no_key"
-  | "budget";
+  | "budget"
+  | "unavailable";
 
-const MESSAGES: Record<ClassifierErrorKind, string> = {
-  auth: "The API key was rejected. Check it on the Options page.",
-  rate_limit: "TypeSafe is rate-limiting requests right now.",
-  overloaded: "TypeSafe is temporarily overloaded.",
-  bad_request: "TypeSafe rejected the request.",
-  bad_response: "TypeSafe returned an unexpected response.",
-  timeout: "TypeSafe didn't answer in time.",
-  network: "Couldn't reach TypeSafe (network error).",
-  server: "TypeSafe had a server error.",
-  no_key: "No API key set. Add one on the Options page.",
-  budget: "Stopped: the call budget for this run was reached.",
+/** `who` is the service being called: "TypeSafe" (direct) or "The tab-triage service" (hosted). */
+const MESSAGES: Record<ClassifierErrorKind, (who: string) => string> = {
+  auth: (w) => (w === "TypeSafe" ? "The API key was rejected." : `${w} refused this request. Try updating the extension.`),
+  rate_limit: (w) => `${w} is rate-limiting requests right now. Try again in a minute.`,
+  overloaded: (w) => `${w} is temporarily overloaded.`,
+  bad_request: (w) => `${w} rejected the request.`,
+  bad_response: (w) => `${w} returned an unexpected response.`,
+  timeout: (w) => `${w} didn't answer in time.`,
+  network: (w) => `Couldn't reach ${w === "TypeSafe" ? w : "the tab-triage service"} (network error).`,
+  server: (w) => `${w} had a server error.`,
+  no_key: () => "No API key set.",
+  budget: () => "Stopped: the call budget for this run was reached.",
+  unavailable: (w) => `${w} is paused for today. Try again tomorrow.`,
 };
 
-/** Never carries the request body or the API key; only a kind and status. */
+/** Never carries the request body or any key; only a kind and status. */
 export class ClassifierError extends Error {
   constructor(
     readonly kind: ClassifierErrorKind,
     readonly status?: number,
     readonly attempts = 1,
+    who = "TypeSafe",
   ) {
-    super(MESSAGES[kind] + (status ? ` (HTTP ${status})` : "") + (attempts > 1 ? ` after ${attempts} tries` : ""));
+    super(MESSAGES[kind](who) + (status ? ` (HTTP ${status})` : "") + (attempts > 1 ? ` after ${attempts} tries` : ""));
     this.name = "ClassifierError";
   }
   /** Errors where trying another tab is pointless: the whole run should stop. */
   get fatal(): boolean {
-    return this.kind === "auth" || this.kind === "no_key" || this.kind === "budget";
+    return this.kind === "auth" || this.kind === "no_key" || this.kind === "budget" || this.kind === "unavailable";
   }
   /**
    * Errors specific to one tab's request (a deterministic 400/422 or a malformed

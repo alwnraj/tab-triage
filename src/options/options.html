@@ -13,9 +13,10 @@
 
     <section id="consent-box" class="card consent hidden">
       <h2>Before your first sort</h2>
-      <p>When you press <strong>Sort</strong>, tab-triage sends a small amount of data about each eligible tab to
-        <strong>TypeSafe</strong> (<code>api.typesafe.ai</code>), a third-party classification API, using your own API key.
-        The panel below shows exactly what. Titles can contain personal text (a name, an email subject), so blocklist sites whose titles you don't want sent. Tabs that match one of your domain rules are grouped locally and are never sent.</p>
+      <p>When you press <strong>Sort</strong>, tab-triage sends a small amount of data about each eligible tab to the
+        <strong>tab-triage service</strong>, which passes it to <strong>TypeSafe</strong>, a third-party classification API, and returns the answer.
+        The service doesn't store or log it. No account or API key is needed. The panel below shows exactly what is sent; the
+        <a id="privacy-link" href="#" target="_blank" rel="noopener">privacy policy</a> has the details. Titles can contain personal text (a name, an email subject), so blocklist sites whose titles you don't want sent. Tabs that match one of your domain rules are grouped locally and are never sent.</p>
       <button id="accept" class="primary">I understand, enable sorting</button>
     </section>
     <p id="consent-done" class="muted hidden">Sorting enabled on <span id="consent-date"></span>. <button id="revoke">Revoke</button></p>
@@ -27,7 +28,9 @@
         <li><strong>Sent with every request:</strong> your group keys and descriptions below (group colours and domain lists stay local).</li>
         <li><strong>Never sent:</strong> full URLs, page content, cookies, history, tab ids; pinned tabs; tabs in incognito windows;
           <code>chrome://</code>, extension and file pages; localhost, IP addresses and intranet names; anything on your blocklist.</li>
-        <li><strong>Stored locally:</strong> answers cached for 7 days under a hash key (no hostname or title stored); the API key in this browser's extension storage.</li>
+        <li><strong>Also sent:</strong> a random install id, used only for rate limiting. It isn't linked to you or your Google account.</li>
+        <li><strong>Who receives it:</strong> the tab-triage service (<code id="service-host"></code>), which forwards the hostname, title and group descriptions to TypeSafe and stores none of them.</li>
+        <li><strong>Stored locally:</strong> answers cached for 7 days under a hash key (no hostname or title stored).</li>
       </ul>
       <p class="muted">Example request built by the same code the extension uses:</p>
       <pre id="example" aria-label="Example request"></pre>
@@ -40,16 +43,6 @@
       <button id="add-group">Add group</button>
     </section>
 
-    <section class="card">
-      <h2>API key</h2>
-      <p class="muted">Your TypeSafe key. Stored only in this browser's extension storage, sent only to <code>api.typesafe.ai</code>.</p>
-      <div class="row">
-        <input id="api-key" type="password" autocomplete="off" spellcheck="false" placeholder="Paste key">
-        <button id="save-key">Save key</button>
-        <button id="clear-key">Remove</button>
-      </div>
-      <p id="key-status" class="muted"></p>
-    </section>
 
     <section class="card">
       <h2>Blocklist</h2>

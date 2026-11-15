@@ -1,11 +1,12 @@
-import { MODEL_ID } from "../core/config.js";
+import { MODEL_ID, SERVICE_URL } from "../core/config.js";
+import { type HostedRequest, INSTALL_HEADER } from "../providers/wire.js";
 import { AnswerCache } from "../core/cache.js";
 import { toModelGroups } from "../core/groups.js";
 import { normalizeDomain, toTabInput, truncateTitle } from "../core/privacy.js";
 import { GROUP_COLORS, type GroupDef } from "../core/types.js";
 import { buildRequest } from "../providers/request.js";
 import type { SortReport } from "../core/sort.js";
-import { chromeKV, loadApiKey, loadSettings, saveApiKey, saveSettings, type Settings } from "../settings.js";
+import { chromeKV, loadSettings, saveSettings, type Settings } from "../settings.js";
 
 const kv = chromeKV(chrome.storage.local);
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
@@ -33,8 +34,12 @@ function renderExample() {
     pre.textContent = "(No group has a description, so nothing is sent: every group is matched by domain only.)";
     return;
   }
-  const body = buildRequest(MODEL_ID, { site: "en.wikipedia.org", title: truncateTitle("Calibration (statistics) - Wikipedia") }, mg, "fwd");
-  pre.textContent = `POST https://api.typesafe.ai/v1/systemone\nAuthorization: Bearer <your key>\n\n${JSON.stringify(body, null, 2)}`;
+  const input = { site: "en.wikipedia.org", title: truncateTitle("Calibration (statistics) - Wikipedia") };
+  // Exactly what HostedClassifier sends, then what the service builds from it with the same buildRequest().
+  const sent: HostedRequest = { v: 1, ...input, groups: mg.map(({ key, description }) => ({ key, description })), order: "fwd" };
+  pre.textContent =
+    `From your browser:\nPOST ${SERVICE_URL}/api/classify\n${INSTALL_HEADER}: <random install id>\n\n${JSON.stringify(sent, null, 2)}` +
+    `\n\nWhat the service sends on to TypeSafe:\nPOST https://api.typesafe.ai/v1/systemone\n\n${JSON.stringify(buildRequest(MODEL_ID, input, mg, "fwd"), null, 2)}`;
 }
 
 function groupRow(g: GroupDef): HTMLElement {
@@ -77,10 +82,6 @@ function renderConsent() {
   if (s.consentAt) $("consent-date").textContent = new Date(s.consentAt).toLocaleString();
 }
 
-async function renderKeyStatus() {
-  const k = await loadApiKey(kv);
-  $("key-status").textContent = k ? "A key is saved. (It is never displayed.)" : "No key saved.";
-}
 
 async function exportTabs() {
   const tabs = await chrome.tabs.query({});
@@ -119,7 +120,8 @@ async function init() {
   renderGroups();
   renderConsent();
   renderExample();
-  await renderKeyStatus();
+  $("service-host").textContent = new URL(SERVICE_URL).host;
+  $<HTMLAnchorElement>("privacy-link").href = `${SERVICE_URL}/privacy`;
   $<HTMLTextAreaElement>("blocklist").value = s.blocklist.join("\n");
   const th = $<HTMLInputElement>("threshold");
   th.value = String(s.threshold);
@@ -154,16 +156,6 @@ async function init() {
     s.consentAt = null;
     renderConsent();
     persist();
-  });
-  $("save-key").addEventListener("click", async () => {
-    const input = $<HTMLInputElement>("api-key");
-    await saveApiKey(kv, input.value);
-    input.value = "";
-    await renderKeyStatus();
-  });
-  $("clear-key").addEventListener("click", async () => {
-    await saveApiKey(kv, "");
-    await renderKeyStatus();
   });
   $("clear-cache").addEventListener("click", async () => {
     await new AnswerCache(kv).clear();

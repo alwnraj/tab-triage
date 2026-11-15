@@ -7,8 +7,8 @@ import { parseRequest, type Response } from "./messages.js";
 import type { Classifier } from "./providers/classifier.js";
 import { ClassifierError } from "./providers/classifier.js";
 import { MockClassifier } from "./providers/mock.js";
-import { TypeSafeClassifier } from "./providers/typesafe.js";
-import { chromeKV, loadApiKey, loadSettings, saveSettings } from "./settings.js";
+import { HostedClassifier } from "./providers/hosted.js";
+import { chromeKV, installId, loadSettings, removeLegacyApiKey, saveSettings } from "./settings.js";
 
 const local = chromeKV(chrome.storage.local);
 const session = chromeKV(chrome.storage.session);
@@ -23,6 +23,8 @@ const runKey = (w: number) => `run:${w}`;
 chrome.runtime.onInstalled.addListener(async ({ reason }) => {
   const s = await loadSettings(local);
   await saveSettings(local, s); // materialise defaults
+  await installId(local);
+  await removeLegacyApiKey(local);
   if (reason === "install" && !s.consentAt) await chrome.runtime.openOptionsPage();
 });
 
@@ -36,7 +38,7 @@ async function state(windowId: number) {
 
 async function makeClassifier(mock: boolean): Promise<Classifier> {
   if (mock) return new MockClassifier(60);
-  return new TypeSafeClassifier({ apiKey: await loadApiKey(local) });
+  return new HostedClassifier({ installId: await installId(local) });
 }
 
 async function handle(msg: unknown): Promise<Response> {

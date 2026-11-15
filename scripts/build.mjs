@@ -1,9 +1,12 @@
 // Builds dist/ (load it with chrome://extensions → Load unpacked).
 import { build } from "esbuild";
-import { cpSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { deflateSync } from "node:zlib";
 
 const out = "dist";
+// The hosted service the extension calls. Override for a local or staging server:
+//   TAB_TRIAGE_SERVICE=http://localhost:8787 npm run build
+const SERVICE = new URL(process.env.TAB_TRIAGE_SERVICE ?? "https://tab-triage.vercel.app").origin;
 rmSync(out, { recursive: true, force: true });
 mkdirSync(`${out}/icons`, { recursive: true });
 
@@ -21,16 +24,22 @@ await build({
   sourcemap: false,
   legalComments: "none",
   logLevel: "info",
+  define: { __SERVICE_URL__: JSON.stringify(SERVICE) },
 });
 
 for (const [from, to] of [
-  ["src/manifest.json", "manifest.json"],
   ["src/popup/popup.html", "popup.html"],
   ["src/popup/popup.css", "popup.css"],
   ["src/options/options.html", "options.html"],
   ["src/options/options.css", "options.css"],
   ["src/ui/common.css", "common.css"],
 ]) cpSync(from, `${out}/${to}`);
+
+// The manifest's only host permission is the service the build points at.
+const manifest = JSON.parse(readFileSync("src/manifest.json", "utf8"));
+manifest.host_permissions = [`${SERVICE}/*`];
+writeFileSync(`${out}/manifest.json`, JSON.stringify(manifest, null, 2) + "\n");
+console.log(`Service: ${SERVICE}`);
 
 // --- Icons: drawn in code so the repo has no binary assets to maintain. ---
 // A rounded square with three coloured "tab group" bars of decreasing length.

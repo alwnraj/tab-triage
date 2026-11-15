@@ -10,3 +10,4 @@ eval/out/
 .DS_Store
 eval/results/*mock*
 eval/results/synthetic*
+.vercel/

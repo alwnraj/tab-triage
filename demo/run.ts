@@ -49,13 +49,9 @@ function run(cmd: string, a: string[]) {
 }
 
 // ---------- preflight ----------
-const key = process.env.TYPESAFE_API_KEY ?? "";
-// Keep the key out of every child process (Chromium, ffmpeg) we spawn from here on.
+// A real run uses the hosted service the extension is built against (no key here).
+// Keep any key in the environment out of every child process (Chromium, ffmpeg).
 delete process.env.TYPESAFE_API_KEY;
-if (!MOCK && !key) {
-  console.error("Real demo needs TYPESAFE_API_KEY in the environment. For a rehearsal, run `npm run demo -- --mock`.");
-  process.exit(1);
-}
 try {
   run("ffmpeg", ["-version"]);
 } catch {
@@ -107,7 +103,7 @@ let recorder: ChildProcess | null = null;
 const raw = join(OUT, `${PREFIX}raw.mkv`);
 const removeProfile = () => rmSync(profileDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
 // If interrupted: stop capture, close Chromium FIRST (deleting a profile it is still writing
-// can fail half-way), then delete the profile (it may hold the API key) and the raw capture.
+// can fail half-way), then delete the profile and the raw capture.
 for (const sig of ["SIGINT", "SIGTERM", "SIGHUP"] as const)
   process.on(sig, async () => {
     recorder?.kill("SIGKILL");
@@ -130,14 +126,13 @@ try {
     return win!.id!;
   }, WIN);
 
-  // Settings in the TEMPORARY profile only: consent, default groups, mode, and (real run) the key.
+  // Settings in the TEMPORARY profile only: consent, default groups and mode.
   await sw.evaluate(
-    async ({ groups, mock, apiKey }) => {
+    async ({ groups, mock }) => {
       const { settings } = (await chrome.storage.local.get("settings")) as { settings: Record<string, unknown> };
       await chrome.storage.local.set({ settings: { ...settings, groups, consentAt: Date.now(), mockMode: mock, collapse: false, threshold: 0.8 } });
-      if (apiKey) await chrome.storage.local.set({ apiKey });
     },
-    { groups: DEFAULT_GROUPS, mock: MOCK, apiKey: MOCK ? "" : key },
+    { groups: DEFAULT_GROUPS, mock: MOCK },
   );
 
   console.log(`[demo] opening ${urls.length} public pages…`);
@@ -226,8 +221,6 @@ try {
   const sorted = await act({ type: "sort", windowId, threshold: 0.8 });
   if (!sorted.ok) throw new Error(`Sort failed: ${sorted.error}`);
   mark("sorted");
-  // The key is only needed for the sort itself: remove it from the temporary profile right away.
-  await sw.evaluate(() => chrome.storage.local.remove("apiKey"));
   await sleep(3500);
   mark("leftAlone");
   await sleep(6000);

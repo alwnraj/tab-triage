@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>tab-triage privacy policy</title>
+  <link rel="stylesheet" href="/site.css">
+</head>
+<body>
+  <main>
+    <p><a href="/">tab-triage</a></p>
+    <h1>Privacy policy</h1>
+    <p class="muted">Last updated 15 November 2026.</p>
+
+    <p>tab-triage is a Chrome extension that sorts the open tabs in one window into Chrome tab groups. This page says exactly what it sends, to whom, and what is kept.</p>
+
+    <h2>What leaves your browser, and when</h2>
+    <p>Only when you press <strong>Sort tabs</strong>, and only after you have accepted the consent screen. For each eligible tab in that window, the extension sends:</p>
+    <ul>
+      <li>the site's <strong>hostname</strong> (for example <code>en.wikipedia.org</code>), never the full address, path, query or fragment;</li>
+      <li>the tab's <strong>title</strong>, cut to 120 characters. Titles can contain personal text such as a name or an email subject, so use the blocklist for sites whose titles you don't want sent;</li>
+      <li>the <strong>names and descriptions of your tab groups</strong> (not their colours or domain lists);</li>
+      <li>a <strong>random install id</strong> created when you installed the extension. It isn't linked to you, your Google account or your browser profile, and is used only for rate limiting.</li>
+    </ul>
+    <p>It never sends page content, full URLs, cookies, browsing history, or anything from pinned tabs, incognito windows, <code>chrome://</code> and extension pages, local or intranet addresses, blocklisted sites, or tabs that match one of your domain rules (those are grouped on your device).</p>
+
+    <h2>Who receives it</h2>
+    <ol>
+      <li><strong>The tab-triage service</strong> (this site, hosted on Vercel) receives the request, checks it, and passes the hostname, title and group descriptions to TypeSafe. It does not store or log hostnames, titles or group descriptions. For rate limiting it keeps salted hashes of the install id and your IP address for about a minute, and a daily count of tokens used. Vercel, as the host, keeps standard request logs (time, path, status, IP address) for a limited period under <a href="https://vercel.com/legal/privacy-policy">its privacy policy</a>.</li>
+      <li><strong>TypeSafe</strong> (<code>api.typesafe.ai</code>) classifies the tab and returns probabilities. TypeSafe's handling of request data is described in <a href="https://docs.typesafe.ai/legal.md">its legal and data-handling pages</a>.</li>
+    </ol>
+
+    <h2>What is kept on your device</h2>
+    <p>Your settings and groups, the install id, and answers cached for 7 days under a hash of (hostname, title, groups, model version). The cached values contain only probabilities, not the hostname or title. The last sort's results and Undo state are kept in session storage and cleared when the browser closes. Clear the cache any time from the Options page; uninstalling removes everything.</p>
+
+    <h2>What is not done</h2>
+    <p>No advertising, no analytics, no selling or sharing of data, no use of data for anything except sorting your tabs, and no human review of your requests. The extension uses only the <code>tabs</code>, <code>tabGroups</code> and <code>storage</code> permissions, and can contact only this service.</p>
+
+    <h2>Contact</h2>
+    <p>Questions or requests: open an issue at <a href="https://github.com/alwnraj/tab-triage/issues">github.com/alwnraj/tab-triage</a>. The source code of the extension and of this service is public there.</p>
+  </main>
+</body>
+</html>

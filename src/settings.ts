@@ -68,14 +68,22 @@ export async function loadSettings(kv: KV): Promise<Settings> {
 export async function saveSettings(kv: KV, s: Settings): Promise<void> {
   await kv.set({ [SETTINGS_KEY]: sanitize(s) });
 }
-export async function loadApiKey(kv: KV): Promise<string> {
-  const v = (await kv.get([API_KEY_KEY]))[API_KEY_KEY];
-  return typeof v === "string" ? v : "";
+/** Earlier versions stored the user's own TypeSafe key; the hosted service made it unnecessary. */
+export async function removeLegacyApiKey(kv: KV): Promise<void> {
+  await kv.remove([API_KEY_KEY]);
 }
-export async function saveApiKey(kv: KV, key: string): Promise<void> {
-  const k = key.trim();
-  if (k) await kv.set({ [API_KEY_KEY]: k });
-  else await kv.remove([API_KEY_KEY]);
+
+const INSTALL_ID_KEY = "installId";
+/**
+ * An anonymous random id for this install, sent to the hosted service for rate
+ * limiting only. Not derived from anything about the user or the browser.
+ */
+export async function installId(kv: KV): Promise<string> {
+  const v = (await kv.get([INSTALL_ID_KEY]))[INSTALL_ID_KEY];
+  if (typeof v === "string" && v) return v;
+  const id = crypto.randomUUID();
+  await kv.set({ [INSTALL_ID_KEY]: id });
+  return id;
 }
 
 /** chrome.storage area as a KV. */
