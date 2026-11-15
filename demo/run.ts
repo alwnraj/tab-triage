@@ -69,6 +69,13 @@ const { ctx, sw, extId, profileDir } = await launchWithExtension({
   args: [`--window-size=${WIN.width},${WIN.height}`, "--window-position=0,0", "--hide-crash-restore-bubble", "--disable-session-crashed-bubble"],
 });
 let recorder: ChildProcess | null = null;
+// If interrupted, still delete the temporary profile (it may hold the API key) and stop capture.
+for (const sig of ["SIGINT", "SIGTERM", "SIGHUP"] as const)
+  process.on(sig, () => {
+    recorder?.kill("SIGINT");
+    rmSync(profileDir, { recursive: true, force: true });
+    process.exit(130);
+  });
 try {
   const windowId: number = await sw.evaluate(async (w) => {
     const [win] = await chrome.windows.getAll({ windowTypes: ["normal"] });
@@ -158,6 +165,8 @@ try {
   await popup.click("#sort");
   await popup.waitForFunction(() => !(document.getElementById("sort") as HTMLButtonElement).disabled, null, { timeout: 120_000 });
   mark("sorted");
+  // The key is only needed for the sort itself: remove it from the temporary profile right away.
+  await sw.evaluate(() => chrome.storage.local.remove("apiKey"));
   await sleep(3500);
 
   await popup.evaluate(() => {

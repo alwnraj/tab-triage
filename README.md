@@ -75,6 +75,8 @@ TypeSafe charges per input token; output tokens are free. The price is one const
 
 `npm run demo` records the real extension in a headed Chromium with a **fresh temporary profile** (none of your tabs, bookmarks or accounts), opening ~30 public, logged-out pages from [`demo/urls.json`](demo/urls.json), two of which are deliberately ambiguous. It captures the screen with ffmpeg (avfoundation on macOS, x11grab under Xvfb on Linux), so the **real tab strip** is in frame, unlike Playwright's page-only `recordVideo`. The popup is opened in a popup-type window next to the strip and clicked by Playwright rather than through the toolbar button, because synthetic toolbar clicks aren't reliable. Captions and cards are rendered as images, and the end card's latency, cost and percent-sorted figures are read from that run's own report. The published video uses the real classifier. `--mock` is for rehearsal only and stamps MOCK on every caption.
 
+Before recording on macOS, turn on **Do Not Disturb** and close anything that might pop up. avfoundation captures the whole screen. The edit crops to the browser window and writes `demo/out/frame-check.png` so you can confirm nothing else got in. The raw capture is deleted after editing. In a real run, the API key is written only into the throwaway profile, removed from it as soon as the sort finishes, and the profile is deleted on exit, including on Ctrl-C.
+
 ## Development
 
 ```bash

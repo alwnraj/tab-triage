@@ -30,3 +30,17 @@ Not changed: 404 is still a per-tab `bad_request`, but the "all calls rejected" 
 ## 4. Eval harness
 
 `npm run eval` makes one pass over the API that collects *both* option orders for every model-routed tab, then sweeps thresholds 0.50–0.95 in code. Trying ten thresholds therefore costs the same as trying one, and the same data shows how often reversing the order changes the answer. Before it makes any call, the run computes how many requests it needs and refuses if that's over `--max-calls` (default 100). The provider also counts real HTTP attempts as a hard stop. Domain-table rows are reported separately and left out of the reliability bins, because they're p = 1 by construction and would make calibration look better than it is. Everything produced from `synthetic.dev.json` or with `--mock` gets a red "NOT A REAL RESULT" banner in the CSV, JSON and SVG. Your real labels (`eval/labeled.json`) and the per-row outputs are gitignored. Only the aggregates in `eval/results/` are meant for git.
+
+## 5. Demo pipeline
+
+Playwright's `recordVideo` only captures page content, so the demo records the OS screen instead (avfoundation on this Mac, x11grab under Xvfb on Linux) and crops to the browser window. That puts the real tab strip in frame. The Homebrew ffmpeg here has no `drawtext` filter, so captions, the title card and the end card are HTML pages rendered to PNG by Chromium and composited with `overlay`. That also looks better. The end card reads latency, cost and percent sorted from the run's own report in `chrome.storage.session`, never from constants. The popup runs in a popup-type window and is clicked by Playwright, because macOS has no xdotool and synthetic toolbar clicks aren't reliable. The README says so. I tested the flow headless with the mock classifier and the ffmpeg edit on a synthetic 2560×1664 clip (output: H.264, yuv420p, faststart, 30 s, 7.6 MB GIF). The real recording waits on screen-recording permission and an API key.
+
+## 6. Review #3 (pre-push)
+
+The Fable reviewer hit its weekly usage limit (resets 2026-11-16, 8am ET) before it returned anything, so review #3 has **not** run yet. In the meantime I did a manual pre-push pass:
+- Pattern-scanned all git history for key-like strings (none).
+- Checked that no `.env`, labels, exports, recordings or `dist/` were ever committed.
+- Confirmed the only author email is the GitHub noreply address.
+- Confirmed there are no HTML sinks for untrusted text, the extension never logs the key, and there are only 4 permissions.
+
+That pass found one real issue. In a real demo run the API key sat in the temporary profile until cleanup, and an interrupted run could leave it in `/tmp`. The key is now removed from the profile right after the sort, and signal handlers delete the profile. The Fable review should still run before the repo goes public.
