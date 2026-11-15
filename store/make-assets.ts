@@ -6,6 +6,8 @@
  * Options page:
  *   store/screenshot-1..5.png  1280×800
  *   store/promo-small.png      440×280
+ *   store/promo-marquee.png    1400×560
+ *   store/store-icon.png       128×128 (96×96 artwork, transparent padding)
  * Frames are cropped above the demo's own captions. Refuses mock recordings.
  */
 import { execFileSync } from "node:child_process";
@@ -107,6 +109,21 @@ await render(
      <div style="font-size:19px;color:#c9c6d8;line-height:1.35">Sorts your tabs into groups,<br>only when it's sure. Undo anytime.</div></div>`,
   440, 280, join(OUT, "promo-small.png"),
 );
+await render(
+  `<div style="display:flex;align-items:center;gap:64px;height:560px;padding:0 80px">
+     <div style="flex:1;display:flex;flex-direction:column;gap:20px">
+       <div style="display:flex;gap:10px">${["#1a73e8", "#188038", "#fa903e", "#d93025", "#a142f4"].map((c) => `<div style="width:64px;height:14px;border-radius:7px;background:${c}"></div>`).join("")}</div>
+       <div style="font-size:84px;font-weight:800;letter-spacing:-2px;line-height:1">tab-triage</div>
+       <div style="font-size:30px;color:#c9c6d8;line-height:1.35">Sorts your tabs into Chrome tab groups,<br>only when it's sure. Undo anytime.</div>
+     </div>
+     <img class="shot" src="${b64(shots.popup)}" style="height:470px"></div>`,
+  1400, 560, join(OUT, "promo-marquee.png"),
+);
 await browser.close();
+
+// Store icon: the 128px icon's artwork at 96×96, centred on a transparent 128×128 canvas
+// (Chrome Web Store icon guidelines). Needs dist/ from `npm run package`.
+execFileSync("ffmpeg", ["-loglevel", "error", "-y", "-i", "dist/icons/icon128.png", "-vf", "scale=96:96:flags=lanczos,format=rgba,pad=128:128:16:16:color=0x00000000", join(OUT, "store-icon.png")]);
+
 rmSync(TMP, { recursive: true, force: true });
-console.log("Wrote store/screenshot-1..5.png and store/promo-small.png");
+console.log("Wrote store/screenshot-1..5.png, promo-small.png, promo-marquee.png and store-icon.png");

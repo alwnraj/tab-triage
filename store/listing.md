@@ -38,11 +38,12 @@ Upload `release/tab-triage-1.0.0.zip`, **not** the `-download.zip`: that one car
 
 **Category:** Workflow & Planning (Productivity). **Language:** English.
 
-**Graphic assets:**
-- Store icon (128×128): `dist/icons/icon128.png` (after `npm run package`)
-- Screenshots (1280×800), in this order: `screenshot-1.png` to `screenshot-5.png`
-- Small promo tile (440×280): `promo-small.png`
-- Marquee (1400×560): optional, skip
+**Graphic assets** (all in `store/`):
+- Store icon (128×128): `store-icon.png`. The artwork is 96×96 on a transparent canvas, as the icon guidelines ask; the icon may keep its transparency.
+- Global promo video: leave empty (optional; it needs a YouTube link).
+- Screenshots (1280×800, 24-bit PNG, no alpha), in this order: `screenshot-1.png` to `screenshot-5.png`.
+- Small promo tile (440×280): `promo-small.png`.
+- Marquee promo tile (1400×560, optional): `promo-marquee.png`.
 
 **Additional fields:**
 - Official URL / homepage: `https://tab-triage-pi.vercel.app`
