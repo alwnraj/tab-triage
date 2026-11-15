@@ -37,7 +37,9 @@ Playwright's `recordVideo` only captures page content, so the demo records the O
 
 ## 6. Review #3 (pre-push)
 
-The Fable reviewer hit its weekly usage limit (resets 2026-11-16, 8am ET) before it returned anything, so review #3 has **not** run yet. In the meantime I did a manual pre-push pass:
+The first attempt at review #3 hit the Fable reviewer's weekly usage limit before it returned anything, so I first did a manual pre-push pass (below). The review itself ran on 2026-11-15; its findings are in "Review #3 findings" at the end.
+
+Manual pre-push pass:
 - Pattern-scanned all git history for key-like strings (none).
 - Checked that no `.env`, labels, exports, recordings or `dist/` were ever committed.
 - Confirmed the only author email is the GitHub noreply address.
@@ -46,3 +48,28 @@ The Fable reviewer hit its weekly usage limit (resets 2026-11-16, 8am ET) before
 That pass found one real issue. In a real demo run the API key sat in the temporary profile until cleanup, and an interrupted run could leave it in `/tmp`. The key is now removed from the profile right after the sort, and signal handlers delete the profile. The Fable review should still run before the repo goes public.
 
 Before pushing, I re-checked one assumption against the docs. The companion Noul's `instructions` is an object `{question, groups}`, and the question refers to `groups` in backticks. That matches TypeSafe's documented structured-instructions pattern exactly (its example puts `potential_duplicate` inside `instructions` and names it in the question), so I didn't change it. Whether the live model reads it as intended is still unverified until there's a key. I also changed the Options page so it no longer shows the last four characters of the saved key, since the brief says never to print it.
+
+## 7. Demo rehearsal
+
+The first rehearsal hung: without macOS Screen Recording permission, avfoundation opens but never delivers a frame, and ffmpeg ignores SIGTERM. `npm run demo` now probes capture for 1 s under a SIGKILL deadline and stops with instructions. Once permission was granted, the recording showed two problems. On macOS, Chrome opened the popup window at the browser's full size, covering the tab strip, so the script now sets its bounds again after creating it. Four pages served a Cloudflare "Just a moment…" check, so I replaced them and the script now names any bot-check page it sees. Captions were moved off the popup's footer. I checked frames for the three key moments (grouped, collapsed, undone) in the real tab strip.
+
+## 8. Review #3 findings
+
+No blockers. The reviewer said the repo is OK to make public after the history checks it couldn't run (I ran them: only the noreply email; no ignored file was ever committed except one stamped `synthetic-mock` eval result, added and removed in consecutive commits. I corrected the README instead of rewriting public history).
+
+Acted on:
+- **Synthetic data could produce an unstamped result.** `npm run eval -- --data eval/synthetic.dev.json` wrote `labeled.*` with no banner. Synthetic is now detected from the path and the file's `_WARNING` field too (`isSyntheticData`, with a test). This was the failure the brief forbids most directly.
+- **"MOCK on every caption" wasn't true.** Only three of seven captions said so. Every rehearsal caption now has a red MOCK badge, and `edit()` refuses to write `demo/demo.gif`/`poster.png` unless both the flag and the report say the run was real and the classifier is TypeSafe.
+- **Demo key cleanup.** The signal handler deleted the profile while Chromium was still writing it; it now closes Chromium first and retries the delete, with an `exit` fallback. `storage.local.remove()` is only a logical delete, so stale profiles from crashed runs are swept at startup, and the README now says the protection is deleting the profile. The key is removed from `process.env` so Chromium and ffmpeg never inherit it. The raw full-screen capture is deleted in `finally`, also when editing fails or on Ctrl-C.
+- **Export and labelling filters.** The Options export passed `pinned: false` for every tab; it now passes the real value. The AppleScript labelling path can't see the blocklist or pinned state, so it has `--exclude` and says so, and both it and the eval print that every labelled row is sent to the API.
+- **Stale docs.** DESIGN §6, §9 and §12 are updated in place (cache key includes `PROMPT_VERSION`, Undo state is in `storage.session`, eval output paths and how the call cap counts), and the README's ambiguous-tab count was wrong (six, not two).
+- Smaller: a real demo run now stops on bot-check pages; the consent text says titles can contain personal text; the API fetch uses `redirect: "error"`, `credentials: "omit"`, `cache: "no-store"`; the "every call rejected" error no longer claims N retries.
+
+Not acted on, and why:
+- **Reversed answer only vetoes on the top key.** Documented as deliberate (§16). It should be revisited once real labelled data shows how often the reversed probability falls below the threshold.
+- **Skipped tabs' titles in the session report.** They're memory-only, never sent, and the popup shows them to the user, who already has them open.
+- **Popup opened mid-run stays disabled.** Real but cosmetic: reopening the popup fixes it. Left for later.
+- **URLs or emails inside titles.** Only whole-URL titles are blanked. Scrubbing arbitrary text would make the model's input unpredictable, so I disclosed it in the consent text instead.
+- **CI actions pinned by tag, not SHA.** Read-only permissions and no secrets, so the risk is low; left as is.
+- **Multi-monitor capture.** Documented: the README now says to look at `frame-check.png` before committing the GIF.
+

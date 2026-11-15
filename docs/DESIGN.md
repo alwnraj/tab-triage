@@ -1,6 +1,6 @@
 # tab-triage design
 
-Status: draft for review #1. Written before any code.
+Status: written before any code for review #1, then kept current. Sections 1–14 are the original design, updated in place where reviews changed it; sections 15–16 record what changed and why.
 
 ## 1. What it does
 
@@ -80,7 +80,7 @@ The brief says "within 0.1 of the threshold". Answers that are 0.1 or less **bel
 
 ## 6. Caching (`src/core/cache.ts`)
 
-- Key: `sha256(hostname + "\n" + title120 + "\n" + groupsHash + "\n" + MODEL_ID + "\n" + order)`, where `order` is `fwd` or `rev`.
+- Key: `sha256(hostname + "\n" + title120 + "\n" + groupsHash + "\n" + MODEL_ID + "\n" + PROMPT_VERSION + "\n" + order)`, where `order` is `fwd` or `rev`. Mock answers are never cached.
 - `groupsHash` = sha256 of the canonical JSON of the model-eligible groups' `(key, description)` pairs in order. Editing a description invalidates the cache.
 - Value: the **raw answer** `{choice, probabilities, noul, inputTokens, at}`, not the decision. The slider changes what the decision is, so we cache what the API returned and decide afterwards.
 - TTL is 7 days. Expired entries are evicted on read and pruned at the start of each run. Stored in `chrome.storage.local` under the `cache:` prefix.
@@ -114,7 +114,7 @@ interface Classifier {
 
 ## 9. Undo
 
-The snapshot is taken before any move and stored in `chrome.storage.local` (`undo:last`), so it survives a service-worker restart. It holds, for every tab in the window: `{tabId, index, groupId, pinned}`. For every group: `{groupId, title, color, collapsed}`.
+The snapshot is taken right before the first move (after classification) and stored in `chrome.storage.session`, so it survives a service-worker restart but not a browser restart, and never touches disk. It holds, for every tab in the window: `{tabId, index, groupId, pinned}`. For every group: `{groupId, title, color, collapsed}`.
 
 Restoring works like this:
 1. Skip tabs that no longer exist.
@@ -146,12 +146,12 @@ Undo covers one level only, and only the last run.
 
 - `eval/synthetic.dev.json` holds about 60 hand-written tabs. It is **SYNTHETIC, dev-only**, and every output generated from it is stamped `SYNTHETIC — not a real result`.
 - `npm run eval:label` writes `eval/labeled.json` with `label: null`. On macOS it reads the open tabs through AppleScript, read-only and only when you run it. It can also convert an export file from the Options page. It never touches the browser profile on disk.
-- `npm run eval` makes one pass over the API that collects both orderings for every tab. A hard cap (`--max-calls`, default 100) aborts the pass before it exceeds the cap. A threshold sweep then runs in code:
+- `npm run eval` makes one pass over the API that collects both orderings for every tab. Before starting it refuses if the planned requests (tabs × 2 orders) exceed `--max-calls` (default 100); during the pass, every HTTP attempt including retries counts against the same cap, and the pass stops if retries would push it over. A threshold sweep then runs in code:
   - coverage(t) is the share of tabs that get grouped.
   - accuracy(t) is the share of grouped tabs whose group matches the label (`none` labels count as wrong whenever they get grouped).
   - Reliability bins (10 bins over [0, 1]) for the Choice's top probability compared with being correct, and for the Noul compared with whether the label is not `none`. ECE is reported too.
   - Domain-table rows are **reported separately** and left out of the calibration bins, because their probability of 1 would flatter the result.
-- Outputs: `eval/out/results.csv` and `eval/out/chart.svg` (a self-contained SVG with no external fonts or scripts).
+- Outputs: aggregates in `eval/results/<name>.{csv,svg,json}` (the SVG is self-contained); per-row answers, which contain titles, in gitignored `eval/out/`. Data is treated as synthetic if the flag, the path or the file's `_WARNING` field says so, and such outputs are stamped and named `synthetic*`.
 
 ## 13. Failure UX
 
@@ -179,7 +179,7 @@ These items override the sections above where the two conflict.
 | Privacy gaps | Incognito windows are refused. localhost, IP literals, single-label intranet names and private suffixes (`.local`, `.internal`, …) are never sent. The worker itself refuses to Sort before consent is given. `eval:label` applies the same filters and writes only hostname plus the 120-char title. `.gitignore` is in the first commit. |
 | Untrusted titles | All UI renders text with `textContent` and never `innerHTML`. The manifest sets a strict `content_security_policy.extension_pages` (`script-src 'self'; object-src 'none'`). The worker accepts messages only from its own extension id and checks that `windowId` is an integer. |
 | The re-ask could be a silent no-op | The API only accepts `criteria` as an object (`maxProperties: 255`). There is no ordered-array form. The eval reports how often fwd and rev give **identical** distributions. If that is 100%, the server is probably not honoring key order, and the README will say so. The reversed answer still only checks agreement, as the brief says. A stricter variant (it must also pass the threshold) is noted in the DEVLOG. |
-| Eval call cap | The eval estimates the worst-case number of calls *before* starting, and refuses if that exceeds `--max-calls` (default 100). Per-row outputs go to gitignored `eval/out/`. Aggregates (CSV + SVG) go to `eval/results/`, which is committable, and the synthetic ones are stamped SYNTHETIC. |
+| Eval call cap | The eval counts the planned calls (tabs × 2 orders) *before* starting and refuses if that exceeds `--max-calls` (default 100); retries also count against the cap during the run. Per-row outputs go to gitignored `eval/out/`. Aggregates (CSV + SVG) go to `eval/results/`, which is committable, and the synthetic ones are stamped SYNTHETIC. |
 
 ## 16. Changes after review #2
 
