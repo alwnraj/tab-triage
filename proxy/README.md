@@ -36,7 +36,7 @@ The service logs only an outcome, a status and a duration per request: never the
    | `ALLOWED_ORIGINS` | (any extension) | After the Chrome Web Store assigns an id: `chrome-extension://<id>`. |
 
 5. **Redeploy** so the variables take effect.
-6. **Point the extension at it.** If the production URL isn't `https://tab-triage.vercel.app`, build with `TAB_TRIAGE_SERVICE=https://<your-domain> npm run build`. That sets both the URL in the code and the manifest's host permission.
+6. **Point the extension at it.** The default service address is a placeholder that never resolves (`tab-triage-service.invalid`), so an extension built without a real address can't send data anywhere by accident. Build with `TAB_TRIAGE_SERVICE=https://<your-domain> npm run build`. That sets both the URL in the code and the manifest's only host permission. Check the domain is really yours first: `tab-triage.vercel.app` belongs to an unrelated site.
 
 ## Run it locally
 

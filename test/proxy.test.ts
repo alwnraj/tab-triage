@@ -35,7 +35,7 @@ function setup(upstream: Array<Response | Error> = [upstreamOk()], env: Env = { 
   });
   const call = (body: unknown = BODY, headers: Record<string, string> = {}, method = "POST") =>
     handle(
-      new Request("https://tab-triage.vercel.app/api/classify", {
+      new Request("https://service.example/api/classify", {
         method,
         headers: { "content-type": "application/json", origin: EXT, [INSTALL_HEADER]: INSTALL, "x-real-ip": "203.0.113.7", ...headers },
         body: method === "POST" ? (typeof body === "string" ? body : JSON.stringify(body)) : undefined,

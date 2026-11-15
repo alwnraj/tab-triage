@@ -6,7 +6,7 @@ import { deflateSync } from "node:zlib";
 const out = "dist";
 // The hosted service the extension calls. Override for a local or staging server:
 //   TAB_TRIAGE_SERVICE=http://localhost:8787 npm run build
-const SERVICE = new URL(process.env.TAB_TRIAGE_SERVICE ?? "https://tab-triage.vercel.app").origin;
+const SERVICE = new URL(process.env.TAB_TRIAGE_SERVICE ?? "https://tab-triage-service.invalid").origin;
 rmSync(out, { recursive: true, force: true });
 mkdirSync(`${out}/icons`, { recursive: true });
 
