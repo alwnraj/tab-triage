@@ -34,6 +34,8 @@ export interface Deps {
   now: () => number;
   limiter: Limiter | null;
   log: (event: Record<string, unknown>) => void;
+  /** The underlying message of the last failed upstream fetch (no request data), for diagnosing "network". */
+  lastFetchError?: () => string | null;
 }
 
 const MAX_BODY = 16 * 1024;
@@ -121,14 +123,15 @@ export async function handle(request: Request, env: Env, deps: Deps): Promise<Re
   } catch (e) {
     const kind = e instanceof ClassifierError ? e.kind : "server";
     const upstream = e instanceof ClassifierError ? e.status : undefined;
-    deps.log({ outcome: "upstream_error", kind, upstream });
+    const detail = kind === "network" || kind === "timeout" ? (deps.lastFetchError?.() ?? null) : null;
+    deps.log({ outcome: "upstream_error", kind, upstream, detail });
     if (kind === "rate_limit") return json(429, { error: "busy" }, { "retry-after": "2" });
     if (kind === "overloaded") return json(503, { error: "busy" }, { "retry-after": "2" });
     if (kind === "bad_request" || kind === "bad_response") return json(422, { error: "upstream rejected this tab" });
     if (kind === "timeout") return json(504, { error: "upstream timeout" });
     // auth (our key is wrong or revoked), network, server: a service problem, not the user's.
     // The kind and upstream status are safe to return and make a misconfiguration diagnosable.
-    return json(502, { error: "upstream error", kind, upstream: upstream ?? null });
+    return json(502, { error: "upstream error", kind, upstream: upstream ?? null, ...(detail ? { detail } : {}) });
   }
 
   if (deps.limiter) {
