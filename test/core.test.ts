@@ -43,6 +43,12 @@ describe("privacy", () => {
     for (const h of ["localhost", "127.0.0.1", "192.168.1.4", "intranet", "nas.local", "x.internal"]) expect(isLocalHost(h)).toBe(true);
     expect(isLocalHost("en.wikipedia.org")).toBe(false);
   });
+  it("blanks titles that are really URLs (untitled or loading tabs)", () => {
+    const base = { id: 1, index: 0, windowId: 1, groupId: -1, pinned: false };
+    for (const title of ["https://a.com/reset?token=abc", "a.com/reset?token=abc", "www.a.com/x", "files.example.org/secret.pdf"])
+      expect(toTabInput({ ...base, url: "https://a.com/reset?token=abc", title }, [])).toEqual({ ok: true, input: { site: "a.com", title: "" } });
+    expect(toTabInput({ ...base, url: "https://a.com/x", title: "Reset your password" }, [])).toMatchObject({ input: { title: "Reset your password" } });
+  });
   it("filters ineligible tabs and strips paths", () => {
     const base = { id: 1, index: 0, windowId: 1, groupId: -1, pinned: false, title: "T" };
     expect(toTabInput({ ...base, url: "https://a.com/x?token=1" }, [])).toEqual({ ok: true, input: { site: "a.com", title: "T" } });

@@ -31,7 +31,7 @@ try {
 
   // Seed settings: consent given, mock mode on (no key, no network).
   await sw.evaluate(async () => {
-    const { settings } = await chrome.storage.local.get("settings");
+    const { settings } = (await chrome.storage.local.get("settings")) as { settings: Record<string, unknown> };
     await chrome.storage.local.set({ settings: { ...settings, consentAt: Date.now(), mockMode: true, collapse: false } });
   });
 
@@ -90,21 +90,28 @@ try {
   );
   assert.equal(undone.groups.length, 0);
 
-  // Undo with a pre-existing user group: it keeps its look.
+  // Review #2 repro in real Chrome: a pre-existing user group in the MIDDLE of loose tabs
+  // ([L, G1, G2, L, ...]); sorting forms new groups around it; Undo must restore it exactly.
   await sw.evaluate(async (wid) => {
-    const tabs = await chrome.tabs.query({ windowId: wid });
-    const misc = tabs.find((t) => t.title?.startsWith("Qwerty"))!;
-    const gid = await chrome.tabs.group({ tabIds: [misc.id!], createProperties: { windowId: wid } });
+    const tabs = (await chrome.tabs.query({ windowId: wid })).filter((t) => t.url?.startsWith("http"));
+    const mid = [tabs[2]!.id!, tabs[3]!.id!];
+    const gid = await chrome.tabs.group({ tabIds: mid as [number, number], createProperties: { windowId: wid } });
     await chrome.tabGroups.update(gid, { title: "Mine", color: "pink" });
+    await chrome.tabs.update(tabs[4]!.id!, { active: true });
   }, windowId);
   const pre = await strip();
   await popup.click("#sort");
   await popup.waitForFunction(() => !(document.getElementById("sort") as HTMLButtonElement).disabled, null, { timeout: 20_000 });
+  const mid = await strip();
+  assert.ok(mid.groups.length > 1, "new groups formed");
   await popup.click("#undo");
   await popup.waitForFunction(() => (document.getElementById("message")?.textContent ?? "").includes("Undone"), null, { timeout: 10_000 });
+  const msgText = await popup.textContent("#message");
+  assert.doesNotMatch(msgText ?? "", /could not be put back/);
   const post = await strip();
-  assert.deepEqual(post.tabs.map((t) => [t.title, t.groupId]), pre.tabs.map((t) => [t.title, t.groupId]));
-  assert.deepEqual(post.groups, pre.groups);
+  const named = (st: Strip) => st.tabs.map((t) => [t.title, st.groups.find((g) => g.id === t.groupId)?.title ?? null]);
+  assert.deepEqual(named(post), named(pre), "order and grouping restored around a pre-existing group");
+  assert.deepEqual(post.groups.map((g) => [g.title, g.color]), pre.groups.map((g) => [g.title, g.color]));
 
   console.log("E2E smoke: PASS");
 } finally {

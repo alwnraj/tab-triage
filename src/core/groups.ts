@@ -9,7 +9,7 @@ import type { GroupDef, ModelGroup, Order } from "./types.js";
 export function slugKey(name: string): string {
   const base = name
     .normalize("NFKD")
-    .replace(/[̀-ͯ]/g, "")
+    .replace(/\p{M}/gu, "")
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "_")
     .replace(/^_+|_+$/g, "")

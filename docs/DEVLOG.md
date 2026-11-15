@@ -7,3 +7,22 @@ I read the TypeSafe `llms.txt` index, the OpenAPI spec and the Choice, Noul, Con
 ## 2. Review #1 (design)
 
 The `.claude/agents/reviewer.md` file was created mid-session, and the agent registry is only loaded at session start, so `subagent_type: reviewer` was not found. The review ran as a general-purpose agent pinned to `model: fable`, briefed to follow reviewer.md and to use only Read, Grep and Glob. (It tried one Bash listing, which was denied, so nothing ran.) It found two real blockers I had missed. First, mock answers could land in the cache and later be served as real. Second, my design saved the Undo snapshot after applying the moves, so a crash halfway through would have left no Undo. I accepted every finding; see DESIGN §15. One judgment call: the reversed-order ask still only checks agreement, as the brief specifies. Requiring the reversed answer to also clear the threshold would be stricter, but it would quietly lower coverage, and I'd rather test that with real data.
+
+## 3. Core logic, provider, UI and review #2
+
+I built the pure core (privacy filter, `g_` option keys, decision rule, cache, pipeline, plan and undo), the TypeSafe provider behind a `Classifier` interface, a keyword `MockClassifier`, then the service worker, popup and options page. Unit tests use a fake browser, and a real-Chromium smoke test (`npm run test:e2e`, fresh temp profile, mock mode, pages served by request interception so there's no network) checks actual `chrome.tabs.group` and Undo behaviour. Review #2 (general-purpose agent on `fable` again, same reason as before) caught a real Undo bug. Chrome keeps every group contiguous, so moving tabs back one at a time can silently pull a tab out of a group the user already had. My fake browser didn't enforce that, so the tests passed anyway. I rewrote Undo to restore by *units* (a loose tab, or a whole group via `tabGroups.move`) from left to right, then fix the order inside each group. I also made the fake enforce Chrome's invariants after every operation. The stricter fake immediately found a second bug: the order inside a group wasn't restored. Both are now covered by tests, and the review's exact scenario passes in real Chromium.
+
+Other review #2 fixes:
+- A run-level error now aborts in-flight calls instead of grinding through every tab.
+- The Undo snapshot is taken right before applying, not before the slow classification.
+- Rollback clears the saved Undo.
+- Titles that are really URLs (untitled or loading tabs) are blanked, so a path or query never leaks.
+- Cache failures can no longer fail a tab.
+- A body-read timeout is retried.
+- "Every call rejected" is treated as a setup error.
+- The API key moved to a true `#private` field.
+- `retry-after: 0` still backs off.
+- Probabilities are range-checked.
+- The mock's first-option lean now really changes the probabilities, so it can exercise `order-disagree`.
+
+Not changed: 404 is still a per-tab `bad_request`, but the "all calls rejected" rule turns a retired model id into a clear run error, which covers the case the reviewer worried about.

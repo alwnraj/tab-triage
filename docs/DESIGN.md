@@ -180,3 +180,11 @@ These items override the sections above where the two conflict.
 | Untrusted titles | All UI renders text with `textContent` and never `innerHTML`. The manifest sets a strict `content_security_policy.extension_pages` (`script-src 'self'; object-src 'none'`). The worker accepts messages only from its own extension id and checks that `windowId` is an integer. |
 | The re-ask could be a silent no-op | The API only accepts `criteria` as an object (`maxProperties: 255`). There is no ordered-array form. The eval reports how often fwd and rev give **identical** distributions. If that is 100%, the server is probably not honoring key order, and the README will say so. The reversed answer still only checks agreement, as the brief says. A stricter variant (it must also pass the threshold) is noted in the DEVLOG. |
 | Eval call cap | The eval estimates the worst-case number of calls *before* starting, and refuses if that exceeds `--max-calls` (default 100). Per-row outputs go to gitignored `eval/out/`. Aggregates (CSV + SVG) go to `eval/results/`, which is committable, and the synthetic ones are stamped SYNTHETIC. |
+
+## 16. Changes after review #2
+
+- **Undo restores by units.** First ungroup the tabs that were loose, then regroup (recreating deleted groups), then move units left to right (a loose tab via `tabs.move`, a whole group via `tabGroups.move`), then fix the order inside each group, restore group metadata and the active tab, and **re-query to verify** (`exact` flag; the popup says so if it isn't exact). This replaces §9's per-tab move pass, which Chrome's contiguous-group rule breaks.
+- The snapshot is taken **after** classification, right before applying.
+- Any run-level error aborts in-flight requests through an `AbortSignal`.
+- `top` in §5 is the argmax of `probabilities` read by key. The API defines `choice` as exactly that, so the two agree. Reading probabilities keeps us independent of how a response orders its keys.
+- Titles that look like URLs are sent as an empty string.

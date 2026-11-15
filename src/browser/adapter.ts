@@ -9,7 +9,11 @@ export interface BrowserAdapter {
   group(tabIds: number[], windowId: number, groupId?: number): Promise<number>;
   ungroup(tabIds: number[]): Promise<void>;
   updateGroup(groupId: number, props: { title?: string; color?: GroupColor; collapsed?: boolean }): Promise<void>;
-  move(tabId: number, index: number): Promise<void>;
+  /** Move tabs (as a block) to an index. Chrome may join or leave groups depending on where they land. */
+  moveTabs(tabIds: number[], index: number): Promise<void>;
+  /** Move a whole group so its first tab lands at index. */
+  moveGroup(groupId: number, index: number): Promise<void>;
+  activate(tabId: number): Promise<void>;
 }
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -38,6 +42,7 @@ export const chromeAdapter: BrowserAdapter = {
         windowId: t.windowId,
         groupId: t.groupId,
         pinned: t.pinned,
+        active: t.active,
         url: t.url,
         title: t.title,
       }));
@@ -59,7 +64,13 @@ export const chromeAdapter: BrowserAdapter = {
   async updateGroup(groupId, props) {
     await withEditRetry(() => chrome.tabGroups.update(groupId, props));
   },
-  async move(tabId, index) {
-    await withEditRetry(() => chrome.tabs.move(tabId, { index }));
+  async moveTabs(tabIds, index) {
+    await withEditRetry(() => chrome.tabs.move(tabIds as [number, ...number[]], { index }));
+  },
+  async moveGroup(groupId, index) {
+    await withEditRetry(() => chrome.tabGroups.move(groupId, { index }));
+  },
+  async activate(tabId) {
+    await withEditRetry(() => chrome.tabs.update(tabId, { active: true }));
   },
 };

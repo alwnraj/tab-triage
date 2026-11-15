@@ -56,11 +56,12 @@ export function parseResponse(body: unknown, groups: readonly ModelGroup[]): Raw
   const f = b?.answers?.fits;
   if (!g || g.type !== "choice" || typeof g.choice !== "string" || !g.probabilities || typeof g.probabilities !== "object")
     throw new ClassifierError("bad_response");
-  if (!f || f.type !== "noul" || typeof f.noul !== "number" || !Number.isFinite(f.noul)) throw new ClassifierError("bad_response");
+  const inRange = (x: unknown): x is number => typeof x === "number" && Number.isFinite(x) && x >= 0 && x <= 1;
+  if (!f || f.type !== "noul" || !inRange(f.noul)) throw new ClassifierError("bad_response");
   const probabilities: Record<string, number> = {};
   for (const grp of groups) {
     const p = (g.probabilities as Record<string, unknown>)[grp.key];
-    probabilities[grp.key] = typeof p === "number" && Number.isFinite(p) ? p : 0;
+    probabilities[grp.key] = inRange(p) ? p : 0;
   }
   if (!groups.some((x) => x.key === g.choice)) throw new ClassifierError("bad_response");
   const tokens = b.usage?.input_tokens;
@@ -82,8 +83,14 @@ export class TypeSafeClassifier implements Classifier {
   private readonly timeoutMs: number;
   private readonly random: () => number;
 
-  constructor(private readonly opts: TypeSafeOptions) {
+  /** True-private field: logging or JSON-serialising the classifier can't reveal the key. */
+  readonly #apiKey: string;
+  private readonly onAttempt?: () => void;
+
+  constructor(opts: TypeSafeOptions) {
     if (!opts.apiKey) throw new ClassifierError("no_key");
+    this.#apiKey = opts.apiKey;
+    this.onAttempt = opts.onAttempt;
     this.model = opts.model ?? MODEL_ID;
     this.id = `typesafe:${this.model}`;
     this.f = opts.fetch ?? fetch.bind(globalThis);
@@ -97,7 +104,7 @@ export class TypeSafeClassifier implements Classifier {
     let last: ClassifierError = new ClassifierError("network");
     for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
       if (signal?.aborted) throw new ClassifierError("timeout", undefined, attempt);
-      this.opts.onAttempt?.();
+      this.onAttempt?.();
       const ctrl = new AbortController();
       const timer = setTimeout(() => ctrl.abort(), this.timeoutMs);
       const onOuterAbort = () => ctrl.abort();
@@ -106,7 +113,7 @@ export class TypeSafeClassifier implements Classifier {
       try {
         const res = await this.f(`${API_BASE}/v1/systemone`, {
           method: "POST",
-          headers: { "content-type": "application/json", authorization: `Bearer ${this.opts.apiKey}` },
+          headers: { "content-type": "application/json", authorization: `Bearer ${this.#apiKey}` },
           body,
           signal: ctrl.signal,
         });
@@ -115,6 +122,8 @@ export class TypeSafeClassifier implements Classifier {
           try {
             json = await res.json();
           } catch {
+            // A timeout while reading the body is a timeout (retryable), not a bad answer.
+            if (ctrl.signal.aborted) throw new ClassifierError("timeout", undefined, attempt + 1);
             throw new ClassifierError("bad_response", res.status);
           }
           return parseResponse(json, groups);
@@ -139,7 +148,7 @@ export class TypeSafeClassifier implements Classifier {
       }
       if (attempt < MAX_RETRIES) {
         const base = BACKOFF_MS[attempt] ?? BACKOFF_MS[BACKOFF_MS.length - 1]!;
-        await this.sleep(retryAfter ?? base + Math.floor(this.random() * 100));
+        await this.sleep(Math.max(retryAfter ?? 0, base + Math.floor(this.random() * 100)));
       }
     }
     throw last;

@@ -34,24 +34,13 @@ export interface ClassifyOutcome {
   error: ClassifierError | null;
 }
 
-/** Run `fn` over items with at most `n` in flight; stops scheduling after a fatal error. */
-export async function pool<T>(items: readonly T[], n: number, fn: (item: T) => Promise<void>): Promise<void> {
+/** Run `fn` over items with at most `n` in flight; stops scheduling new items once `shouldStop()` is true. */
+export async function pool<T>(items: readonly T[], n: number, fn: (item: T) => Promise<void>, shouldStop: () => boolean = () => false): Promise<void> {
   let i = 0;
-  let stop = false;
   const worker = async () => {
-    while (!stop && i < items.length) {
-      const item = items[i++]!;
-      try {
-        await fn(item);
-      } catch (e) {
-        if (e instanceof ClassifierError && e.fatal) stop = true;
-        throw e;
-      }
-    }
+    while (!shouldStop() && i < items.length) await fn(items[i++]!);
   };
-  const results = await Promise.allSettled(Array.from({ length: Math.min(n, items.length) }, worker));
-  const failed = results.find((r): r is PromiseRejectedResult => r.status === "rejected");
-  if (failed) throw failed.reason;
+  await Promise.all(Array.from({ length: Math.min(n, items.length) }, worker));
 }
 
 export interface ClassifyArgs {
@@ -91,24 +80,34 @@ export async function classifyTabs(a: ClassifyArgs): Promise<ClassifyOutcome> {
     else r.decision = { groupId: null, leaningGroupId: null, probability: 0, noul: 0, reason: "no-fit" };
   }
 
+  // Any run-level error (auth, rate limit, network, timeout, 5xx) stops new work and cancels in-flight calls.
+  const abort = new AbortController();
+  let error: ClassifierError | null = null;
+  const fail = (e: ClassifierError) => {
+    error ??= e;
+    abort.abort();
+  };
+
   const ask = async (input: TabInput, order: Order): Promise<RawAnswer> => {
     const key = await cacheKey(input, gHash, a.classifier.model, order);
-    const hit = await a.cache.get(key);
+    // A broken cache must never cost a call or fail a tab: treat it as a miss.
+    const hit = await a.cache.get(key).catch(() => null);
     if (hit) {
       metrics.cacheHits++;
       return hit;
     }
     metrics.apiCalls++;
-    const ans = await a.classifier.classify(input, modelGroups, order);
+    const ans = await a.classifier.classify(input, modelGroups, order, abort.signal);
     metrics.inputTokens += ans.inputTokens;
     // Never cache mock answers: they must not be served later as if a real model produced them.
-    if (!a.classifier.isMock) await a.cache.set(key, ans);
+    if (!a.classifier.isMock) await a.cache.set(key, ans).catch(() => undefined);
     return ans;
   };
 
-  let error: ClassifierError | null = null;
-  try {
-    await pool(toAsk, a.concurrency ?? CONCURRENCY, async ({ result, input }) => {
+  await pool(
+    toAsk,
+    a.concurrency ?? CONCURRENCY,
+    async ({ result, input }) => {
       try {
         const fwd = await ask(input, "fwd");
         let d = decide(fwd, undefined, modelGroups, a.threshold);
@@ -119,20 +118,23 @@ export async function classifyTabs(a: ClassifyArgs): Promise<ClassifyOutcome> {
         }
         result.decision = d;
       } catch (e) {
+        if (error) return; // already aborting; this is just a cancelled sibling
         const err = e instanceof ClassifierError ? e : new ClassifierError("bad_response");
-        result.error = err.message;
         if (err.perTab) {
           metrics.tabErrors++;
+          result.error = err.message;
           result.decision = { groupId: null, leaningGroupId: null, probability: 0, noul: 0, reason: "error" };
           return;
         }
-        error ??= err;
-        if (err.fatal) throw err;
+        result.error = err.message;
+        fail(err);
       }
-    });
-  } catch (e) {
-    error ??= e instanceof ClassifierError ? e : new ClassifierError("bad_response");
-  }
+    },
+    () => error !== null,
+  );
+
+  // If every model call was rejected, the problem is the setup (e.g. a retired model id), not the tabs.
+  if (!error && toAsk.length > 0 && metrics.tabErrors === toAsk.length) error = new ClassifierError("bad_request", undefined, toAsk.length);
 
   metrics.grouped = results.filter((r) => r.decision?.groupId).length;
   return { results, metrics, error };

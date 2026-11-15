@@ -62,6 +62,7 @@ function setup(failWith?: ClassifierError) {
     classifier,
     cache: new AnswerCache(kv),
     saveSnapshot: async (s: Snapshot) => void (saved = s),
+    clearSnapshot: async () => void (saved = null),
   };
   const req = { windowId: W, threshold: 0.8, collapse: true, groups: GROUPS, blocklist: [] };
   return { b, classifier, kv, deps, req, saved: () => saved as Snapshot | null };
@@ -111,7 +112,7 @@ describe("classifyTabs", () => {
 describe("runSort", () => {
   it("groups, names, colours and collapses; snapshot saved before moving", async () => {
     const { b, deps, req, saved } = setup();
-    const before = b.strip();
+    const before = b.look();
     const rep = await runSort(req, deps);
     expect(rep.ok).toBe(true);
     expect(rep.metrics.movedTabs).toBe(3);
@@ -121,8 +122,8 @@ describe("runSort", () => {
     ]);
     expect(rep.metrics.estCostUsd).toBeCloseTo(600 * 0.042e-6, 12);
     expect(saved()).not.toBeNull();
-    await restoreSnapshot(b, saved()!);
-    expect(b.strip()).toBe(before);
+    expect((await restoreSnapshot(b, saved()!)).exact).toBe(true);
+    expect(b.look()).toBe(before);
     expect(b.groups).toHaveLength(0);
   });
   it("moves nothing when the API fails for the run", async () => {
@@ -143,6 +144,27 @@ describe("runSort", () => {
     expect(rep.message).toMatch(/rejected by the API/);
     expect(b.tabs.find((t) => t.id === 99)!.groupId).toBe(-1);
   });
+  it("aborts remaining work on a run-level error instead of grinding through every tab", async () => {
+    const { deps, req, classifier } = setup(new ClassifierError("timeout", undefined, 3));
+    const many = Array.from({ length: 40 }, (_, i) => ({ url: `https://s${i}.example.org/`, title: `Tab ${i}` }));
+    deps.browser = new FakeBrowser(W, many);
+    const rep = await runSort(req, deps);
+    expect(rep.ok).toBe(false);
+    expect(classifier.calls.length).toBeLessThanOrEqual(4); // only the first in-flight batch
+  });
+  it("treats 'every model call rejected' as a setup problem, not per-tab noise", async () => {
+    const { deps, req } = setup();
+    deps.browser = new FakeBrowser(W, [{ url: "https://a.example.org", title: "nope 1" }, { url: "https://b.example.org", title: "nope 2" }]);
+    const rep = await runSort(req, deps);
+    expect(rep.ok).toBe(false);
+    expect(rep.message).toMatch(/No tabs were moved/);
+  });
+  it("never caches mock answers", async () => {
+    const { deps, req, kv, classifier } = setup();
+    classifier.isMock = true;
+    await runSort(req, deps);
+    expect([...kv.map.keys()].filter((k) => k.startsWith("cache:"))).toHaveLength(0);
+  });
   it("stops the whole run on an auth error", async () => {
     const { deps, req, classifier } = setup(new ClassifierError("auth", 401));
     const rep = await runSort(req, deps);
@@ -162,28 +184,78 @@ describe("runSort", () => {
     expect(b.tabs.find((t) => t.id === 2)!.groupId).toBe(-1);
   });
   it("rolls back if Chrome refuses a move mid-apply", async () => {
-    const { b, deps, req } = setup();
+    const { b, deps, req, saved } = setup();
     const before = b.strip();
     b.failGroupCall = 2;
     const rep = await runSort(req, deps);
     expect(rep.ok).toBe(false);
     expect(rep.message).toMatch(/rolled back/);
     expect(b.strip()).toBe(before);
+    expect(saved()).toBeNull(); // no Undo offered for a run that changed nothing
   });
   it("reuses an existing group with the same title and restores its look on undo", async () => {
     const { b, deps, req, saved } = setup();
     const gid = await b.group([3], W);
     await b.updateGroup(gid, { title: "cooking", color: "pink", collapsed: false });
-    const before = b.strip();
+    const before = b.look();
     await runSort(req, deps);
     expect(b.tabs.find((t) => t.id === 2)!.groupId).toBe(gid);
-    await restoreSnapshot(b, saved()!);
-    expect(b.strip()).toBe(before);
+    expect((await restoreSnapshot(b, saved()!)).exact).toBe(true);
+    expect(b.look()).toBe(before);
     expect(b.groups.find((g) => g.id === gid)).toMatchObject({ title: "cooking", color: "pink", collapsed: false });
   });
 });
 
 describe("undo edge cases", () => {
+  it("keeps a pre-existing group intact when new groups form around it (review #2 repro)", async () => {
+    // [L1, G1, G2, L2] with G pre-existing; sort L1 and L2 into a new group; Undo.
+    const b = new FakeBrowser(W, [
+      { url: "https://food.example.org/1", title: "Pasta recipe" },
+      { url: "https://g.example.org/1", title: "G1" },
+      { url: "https://g.example.org/2", title: "G2" },
+      { url: "https://food.example.org/2", title: "Pasta recipe" },
+    ]);
+    const gid = await b.group([2, 3], W);
+    await b.updateGroup(gid, { title: "Mine", color: "pink", collapsed: false });
+    const before = b.look();
+    let saved: Snapshot | null = null;
+    const rep = await runSort(
+      { windowId: W, threshold: 0.8, collapse: true, groups: GROUPS, blocklist: [] },
+      {
+        browser: b,
+        classifier: new Scripted(TABLE),
+        cache: new AnswerCache(new MemoryKV()),
+        saveSnapshot: async (s) => void (saved = s),
+        clearSnapshot: async () => void (saved = null),
+      },
+    );
+    expect(rep.metrics.movedTabs).toBe(2);
+    expect(b.look()).not.toBe(before);
+    const r = await restoreSnapshot(b, saved!);
+    expect(r.exact).toBe(true);
+    expect(b.look()).toBe(before);
+    expect(b.groups.find((g) => g.id === gid)).toMatchObject({ title: "Mine", color: "pink" });
+  });
+  it("restores interleaved loose tabs and several groups exactly, and the active tab", async () => {
+    const specs = Array.from({ length: 9 }, (_, i) => ({ url: `https://x${i}.example.org`, title: `T${i}` }));
+    const b = new FakeBrowser(W, specs);
+    const g1 = await b.group([2, 3], W);
+    await b.updateGroup(g1, { title: "A", color: "blue", collapsed: true });
+    const g2 = await b.group([6, 7, 8], W);
+    await b.updateGroup(g2, { title: "B", color: "red", collapsed: false });
+    await b.activate(5);
+    const snap = await takeSnapshot(b, W);
+    const before = b.look();
+    // Scramble: new group pulling loose tabs together, regroup some members, move things around.
+    const n = await b.group([1, 9, 4], W);
+    await b.updateGroup(n, { title: "New", color: "green", collapsed: true });
+    await b.ungroup([7]);
+    await b.moveGroup(g1, b.tabs.length - 2);
+    await b.activate(1);
+    const r = await restoreSnapshot(b, snap);
+    expect(r.exact).toBe(true);
+    expect(b.look()).toBe(before);
+  });
   it("recreates a pre-existing group that Chrome deleted and tolerates closed tabs", async () => {
     const b = new FakeBrowser(W, tabs());
     const gid = await b.group([2, 3], W);

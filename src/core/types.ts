@@ -74,6 +74,7 @@ export interface TabLike {
   windowId: number;
   groupId: number; // -1 when ungrouped
   pinned: boolean;
+  active?: boolean;
   url?: string;
   title?: string;
 }

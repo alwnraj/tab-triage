@@ -135,6 +135,21 @@ describe("TypeSafeClassifier", () => {
     await c.classify(INPUT, MG, "fwd");
     expect(n).toBe(2);
   });
+  it("rejects out-of-range probabilities and nouls", () => {
+    const bad = okBody({ g_research: 1.7, g_cooking: 0 }, 0.5);
+    expect(parseResponse(bad, MG).probabilities.g_research).toBe(0);
+    expect(() => parseResponse(okBody(undefined, 1.2), MG)).toThrow(ClassifierError);
+  });
+  it("does not expose the key when the classifier object is logged or serialised", () => {
+    const { c } = client([]);
+    expect(JSON.stringify(c)).not.toContain(KEY);
+    expect(Object.values(c).map(String).join(" ")).not.toContain(KEY);
+  });
+  it("retry-after: 0 still backs off", async () => {
+    const { c, sleeps } = client([res(429, {}, { "retry-after": "0" }), res(200, okBody())]);
+    await c.classify(INPUT, MG, "fwd");
+    expect(sleeps[0]).toBeGreaterThanOrEqual(500);
+  });
   it("parses retry-after", () => {
     expect(parseRetryAfter("1")).toBe(1000);
     expect(parseRetryAfter("100")).toBe(5000);
@@ -152,5 +167,10 @@ describe("MockClassifier", () => {
     expect(a.noul).toBeGreaterThan(0.8);
     const none = await m.classify({ site: "x.com", title: "zzz" }, MG, "fwd");
     expect(none.noul).toBeLessThan(0.5);
+    // The first-option lean is in the probabilities, so reversing can flip the top answer.
+    const fwd = await m.classify({ site: "x.com", title: "zzz" }, MG, "fwd");
+    const rev = await m.classify({ site: "x.com", title: "zzz" }, MG, "rev");
+    expect(fwd.choice).toBe("g_research");
+    expect(rev.choice).toBe("g_cooking");
   });
 });

@@ -32,6 +32,8 @@ export interface SortDeps {
   cache: AnswerCache;
   /** Must persist durably BEFORE any tab moves (Undo depends on it). */
   saveSnapshot: (s: Snapshot) => Promise<void>;
+  /** Called after a successful rollback, so Undo isn't offered for a run that changed nothing. */
+  clearSnapshot: () => Promise<void>;
   now?: () => number;
 }
 
@@ -42,7 +44,6 @@ export interface SortDeps {
 export async function runSort(req: SortRequest, d: SortDeps): Promise<SortReport> {
   const now = d.now ?? Date.now;
   const t0 = now();
-  const snap = await takeSnapshot(d.browser, req.windowId, t0);
   const tabs = await d.browser.tabsInWindow(req.windowId);
   await d.cache.prune().catch(() => 0);
 
@@ -80,7 +81,8 @@ export async function runSort(req: SortRequest, d: SortDeps): Promise<SortReport
 
   // Tabs may have closed, navigated or moved windows while we waited. Only move
   // tabs that still look exactly like what we classified.
-  const fresh = new Map((await d.browser.tabsInWindow(req.windowId)).map((t) => [t.id, t]));
+  const freshTabs = await d.browser.tabsInWindow(req.windowId);
+  const fresh = new Map(freshTabs.map((t) => [t.id, t]));
   let staleTabs = 0;
   const choices: { tabId: number; groupId: string | null }[] = [];
   for (const r of out.results) {
@@ -96,6 +98,9 @@ export async function runSort(req: SortRequest, d: SortDeps): Promise<SortReport
     choices.push({ tabId: r.tabId, groupId: r.decision.groupId });
   }
 
+  // Snapshot the state as it is NOW (classification can take a while and the user may have
+  // rearranged things meanwhile); this is what Undo returns to.
+  const snap = await takeSnapshot(d.browser, req.windowId, now(), freshTabs);
   const steps = buildPlan(choices, req.groups, snap.groups);
   const moved = steps.reduce((n, s) => n + s.tabIds.length, 0);
   if (!moved) {
@@ -110,6 +115,7 @@ export async function runSort(req: SortRequest, d: SortDeps): Promise<SortReport
     const why = e instanceof Error ? e.message : String(e);
     try {
       await restoreSnapshot(d.browser, snap);
+      await d.clearSnapshot().catch(() => undefined);
       return finish(false, `Chrome refused a tab move (${why}). Changes were rolled back.`, 0, staleTabs);
     } catch {
       return finish(false, `Chrome refused a tab move (${why}) and the rollback was incomplete. Use Undo.`, 0, staleTabs);

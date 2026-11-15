@@ -60,7 +60,8 @@ async function handle(msg: unknown): Promise<Response> {
       const r = await restoreSnapshot(chromeAdapter, snap);
       await session.remove([undoKey(req.windowId)]);
       const s = await state(req.windowId);
-      const note = r.missing ? ` (${r.missing} tab(s) had been closed)` : "";
+      const note =
+        (r.missing ? ` (${r.missing} tab(s) had been closed)` : "") + (r.exact ? "" : " Some tabs could not be put back exactly.");
       return { ok: true, running: false, ...s, report: s.report ? { ...s.report, message: `Undone${note}.` } : null };
     }
 
@@ -82,6 +83,7 @@ async function handle(msg: unknown): Promise<Response> {
         classifier,
         cache,
         saveSnapshot: (snap) => session.set({ [undoKey(req.windowId)]: snap }),
+        clearSnapshot: () => session.remove([undoKey(req.windowId)]),
       },
     );
     await session.set({ [reportKey(req.windowId)]: report });

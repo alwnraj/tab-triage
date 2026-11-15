@@ -50,6 +50,18 @@ export function isLocalHost(host: string): boolean {
   return /\.(local|internal|lan|home|corp|intranet|test|invalid|example)$/.test(host);
 }
 
+/**
+ * Chrome shows the URL as the title of untitled or still-loading tabs. A title
+ * like that would leak the path and query, so it is replaced by an empty string.
+ */
+export function safeTitle(title: string | undefined, site: string): string {
+  const t = truncateTitle(title);
+  if (/^[a-z][a-z0-9+.-]*:\/\//i.test(t)) return "";
+  const lower = t.toLowerCase();
+  if (lower.startsWith(site + "/") || lower.startsWith("www." + site + "/") || /^[\w-]+(\.[\w-]+)+\/\S*/.test(lower)) return "";
+  return t;
+}
+
 export type Eligibility = { ok: true; input: TabInput } | { ok: false; reason: SkipReason };
 
 /**
@@ -63,5 +75,5 @@ export function toTabInput(tab: TabLike, blocklist: readonly string[]): Eligibil
   if (!site) return { ok: false, reason: "not-web" };
   if (isLocalHost(site)) return { ok: false, reason: "local" };
   if (blocklist.some((d) => hostMatches(site, d))) return { ok: false, reason: "blocklisted" };
-  return { ok: true, input: { site, title: truncateTitle(tab.title) } };
+  return { ok: true, input: { site, title: safeTitle(tab.title, site) } };
 }

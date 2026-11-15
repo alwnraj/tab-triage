@@ -28,14 +28,15 @@ export class MockClassifier implements Classifier {
     if (this.delayMs) await new Promise((r) => setTimeout(r, this.delayMs));
     const text = new Set(words(`${input.site.replace(/\./g, " ")} ${input.title}`));
     const hits = groups.map((g) => words(g.description + " " + g.key.slice(2)).filter((w) => text.has(w)).length);
-    const exps = hits.map((h) => Math.exp(2.2 * h));
+    // Mimic the documented first-option lean: whichever option is listed first gets a small bonus,
+    // so reversing the order can genuinely change the top answer and exercise the re-ask path.
+    const first = (order === "fwd" ? groups[0] : groups[groups.length - 1])?.key;
+    const exps = groups.map((g, i) => Math.exp(2.2 * hits[i]! + (g.key === first ? 0.35 : 0)));
     const z = exps.reduce((a, b) => a + b, 0) || 1;
     const probabilities: Record<string, number> = {};
     groups.forEach((g, i) => (probabilities[g.key] = Math.round((exps[i]! / z) * 1000) / 1000));
-    // Mimic the documented first-option lean so the re-ask path gets exercised.
-    const ord = order === "fwd" ? groups : [...groups].reverse();
-    let choice = ord[0]?.key ?? "";
-    for (const g of ord) if ((probabilities[g.key] ?? 0) > (probabilities[choice] ?? 0)) choice = g.key;
+    let choice = groups[0]?.key ?? "";
+    for (const g of groups) if ((probabilities[g.key] ?? 0) > (probabilities[choice] ?? 0)) choice = g.key;
     const maxHits = Math.max(0, ...hits);
     const noul = maxHits === 0 ? 0.1 : maxHits === 1 ? 0.75 : 0.95;
     return { choice, probabilities, noul, inputTokens: 0, model: "mock" };
