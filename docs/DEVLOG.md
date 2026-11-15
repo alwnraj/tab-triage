@@ -44,3 +44,5 @@ The Fable reviewer hit its weekly usage limit (resets 2026-11-16, 8am ET) before
 - Confirmed there are no HTML sinks for untrusted text, the extension never logs the key, and there are only 4 permissions.
 
 That pass found one real issue. In a real demo run the API key sat in the temporary profile until cleanup, and an interrupted run could leave it in `/tmp`. The key is now removed from the profile right after the sort, and signal handlers delete the profile. The Fable review should still run before the repo goes public.
+
+Before pushing, I re-checked one assumption against the docs. The companion Noul's `instructions` is an object `{question, groups}`, and the question refers to `groups` in backticks. That matches TypeSafe's documented structured-instructions pattern exactly (its example puts `potential_duplicate` inside `instructions` and names it in the question), so I didn't change it. Whether the live model reads it as intended is still unverified until there's a key. I also changed the Options page so it no longer shows the last four characters of the saved key, since the brief says never to print it.
