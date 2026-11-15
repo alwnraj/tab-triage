@@ -1,0 +1,312 @@
+{
+ "_WARNING": "SYNTHETIC DEVELOPMENT DATA. Hand-written examples for building and testing the eval pipeline. NEVER report results from this file as real accuracy.",
+ "groups": "extension defaults (src/settings.ts DEFAULT_GROUPS)",
+ "labels": "group id or 'none'",
+ "tabs": [
+  {
+   "site": "en.wikipedia.org",
+   "title": "Calibration (statistics) - Wikipedia",
+   "label": "research"
+  },
+  {
+   "site": "en.wikipedia.org",
+   "title": "Bayes' theorem - Wikipedia",
+   "label": "research"
+  },
+  {
+   "site": "arxiv.org",
+   "title": "[1706.03762] Attention Is All You Need",
+   "label": "research"
+  },
+  {
+   "site": "arxiv.org",
+   "title": "[2207.05221] Language Models (Mostly) Know What They Know",
+   "label": "research"
+  },
+  {
+   "site": "scholar.google.com",
+   "title": "Google Scholar: expected calibration error",
+   "label": "research"
+  },
+  {
+   "site": "docs.python.org",
+   "title": "statistics — Mathematical statistics functions — Python 3 documentation",
+   "label": "research"
+  },
+  {
+   "site": "developer.mozilla.org",
+   "title": "Array.prototype.map() - JavaScript | MDN",
+   "label": "research"
+  },
+  {
+   "site": "plato.stanford.edu",
+   "title": "Bayesian Epistemology (Stanford Encyclopedia of Philosophy)",
+   "label": "research"
+  },
+  {
+   "site": "www.nature.com",
+   "title": "Deep learning | Nature",
+   "label": "research"
+  },
+  {
+   "site": "paperswithcode.com",
+   "title": "Image Classification on ImageNet | Papers With Code",
+   "label": "research"
+  },
+  {
+   "site": "developer.chrome.com",
+   "title": "chrome.tabGroups | API | Chrome for Developers",
+   "label": "research"
+  },
+  {
+   "site": "www.britannica.com",
+   "title": "Photosynthesis | Definition, Formula, Process | Britannica",
+   "label": "research"
+  },
+  {
+   "site": "github.com",
+   "title": "GitHub - microsoft/playwright: Playwright is a framework for Web Testing and Automation",
+   "label": "code"
+  },
+  {
+   "site": "github.com",
+   "title": "Fix race in tab group undo · Issue #212 · someone/tab-tool",
+   "label": "code"
+  },
+  {
+   "site": "stackoverflow.com",
+   "title": "javascript - How to group tabs in a Chrome extension? - Stack Overflow",
+   "label": "code"
+  },
+  {
+   "site": "www.npmjs.com",
+   "title": "esbuild - npm",
+   "label": "code"
+  },
+  {
+   "site": "pypi.org",
+   "title": "requests · PyPI",
+   "label": "code"
+  },
+  {
+   "site": "gitlab.com",
+   "title": "Merge request !41: add retry with backoff",
+   "label": "code"
+  },
+  {
+   "site": "crates.io",
+   "title": "serde - crates.io: Rust Package Registry",
+   "label": "code"
+  },
+  {
+   "site": "github.com",
+   "title": "Pull request #88: Add Vitest config by contributor",
+   "label": "code"
+  },
+  {
+   "site": "codeberg.org",
+   "title": "forgejo/forgejo: Beyond coding. We forge.",
+   "label": "code"
+  },
+  {
+   "site": "news.ycombinator.com",
+   "title": "Show HN: A tiny Rust web framework",
+   "label": "code"
+  },
+  {
+   "site": "www.bbc.com",
+   "title": "Central bank holds interest rates steady - BBC News",
+   "label": "news"
+  },
+  {
+   "site": "apnews.com",
+   "title": "Storm brings heavy rain to the Gulf Coast | AP News",
+   "label": "news"
+  },
+  {
+   "site": "www.reuters.com",
+   "title": "Oil prices rise as supply concerns grow | Reuters",
+   "label": "news"
+  },
+  {
+   "site": "www.theguardian.com",
+   "title": "Election results: what we know so far | The Guardian",
+   "label": "news"
+  },
+  {
+   "site": "www.npr.org",
+   "title": "Scientists report new findings on coral reef recovery : NPR",
+   "label": "news"
+  },
+  {
+   "site": "www.aljazeera.com",
+   "title": "Live updates: talks resume in Geneva | Al Jazeera",
+   "label": "news"
+  },
+  {
+   "site": "www.theverge.com",
+   "title": "Apple announces new laptops at fall event - The Verge",
+   "label": "news"
+  },
+  {
+   "site": "arstechnica.com",
+   "title": "Researchers find flaw in widely used encryption library | Ars Technica",
+   "label": "news"
+  },
+  {
+   "site": "www.bbc.com",
+   "title": "Champions League: late goal seals win - BBC Sport",
+   "label": "news"
+  },
+  {
+   "site": "techcrunch.com",
+   "title": "Startup raises $40M to build AI chips | TechCrunch",
+   "label": "news"
+  },
+  {
+   "site": "www.seriouseats.com",
+   "title": "The Best Chocolate Chip Cookies Recipe",
+   "label": "cooking"
+  },
+  {
+   "site": "www.bbcgoodfood.com",
+   "title": "Easy chicken curry recipe | BBC Good Food",
+   "label": "cooking"
+  },
+  {
+   "site": "cooking.nytimes.com",
+   "title": "One-Pot Pasta With Spinach and Lemon Recipe - NYT Cooking",
+   "label": "cooking"
+  },
+  {
+   "site": "www.allrecipes.com",
+   "title": "Banana Banana Bread Recipe | Allrecipes",
+   "label": "cooking"
+  },
+  {
+   "site": "www.budgetbytes.com",
+   "title": "Black Bean Soup - Budget Bytes",
+   "label": "cooking"
+  },
+  {
+   "site": "www.kingarthurbaking.com",
+   "title": "How to shape a sourdough boule | King Arthur Baking",
+   "label": "cooking"
+  },
+  {
+   "site": "www.youtube.com",
+   "title": "How to Make Perfect French Omelette - YouTube",
+   "label": "cooking"
+  },
+  {
+   "site": "en.wikipedia.org",
+   "title": "Maillard reaction - Wikipedia",
+   "label": "research"
+  },
+  {
+   "site": "www.epicurious.com",
+   "title": "Classic Margherita Pizza Recipe | Epicurious",
+   "label": "cooking"
+  },
+  {
+   "site": "www.thekitchn.com",
+   "title": "How To Cook Rice on the Stove | The Kitchn",
+   "label": "cooking"
+  },
+  {
+   "site": "www.amazon.com",
+   "title": "Amazon.com: Electric Kettle, 1.7L Stainless Steel",
+   "label": "shopping"
+  },
+  {
+   "site": "www.ebay.com",
+   "title": "Vintage film camera for sale | eBay",
+   "label": "shopping"
+  },
+  {
+   "site": "www.ikea.com",
+   "title": "KALLAX Shelf unit, white - IKEA",
+   "label": "shopping"
+  },
+  {
+   "site": "www.bestbuy.com",
+   "title": "Noise Cancelling Headphones - Best Buy",
+   "label": "shopping"
+  },
+  {
+   "site": "www.etsy.com",
+   "title": "Handmade ceramic mug - Etsy",
+   "label": "shopping"
+  },
+  {
+   "site": "www.rei.com",
+   "title": "Men's Rain Jacket | REI Co-op",
+   "label": "shopping"
+  },
+  {
+   "site": "camelcamelcamel.com",
+   "title": "Amazon price tracker: Kindle Paperwhite price history",
+   "label": "shopping"
+  },
+  {
+   "site": "www.wirecutter.com",
+   "title": "The Best Electric Kettles of 2026 | Reviews by Wirecutter",
+   "label": "shopping"
+  },
+  {
+   "site": "www.amazon.com",
+   "title": "Amazon.com: The Joy of Cooking: Books",
+   "label": "shopping"
+  },
+  {
+   "site": "mail.google.com",
+   "title": "Inbox (3) - Gmail",
+   "label": "none"
+  },
+  {
+   "site": "calendar.google.com",
+   "title": "Google Calendar - Week of November 16",
+   "label": "none"
+  },
+  {
+   "site": "www.netflix.com",
+   "title": "Netflix",
+   "label": "none"
+  },
+  {
+   "site": "open.spotify.com",
+   "title": "Spotify – Web Player",
+   "label": "none"
+  },
+  {
+   "site": "www.figma.com",
+   "title": "Untitled – Figma",
+   "label": "none"
+  },
+  {
+   "site": "weather.com",
+   "title": "10-Day Weather Forecast | Weather.com",
+   "label": "none"
+  },
+  {
+   "site": "www.google.com",
+   "title": "flights to lisbon - Google Search",
+   "label": "none"
+  },
+  {
+   "site": "www.linkedin.com",
+   "title": "Feed | LinkedIn",
+   "label": "none"
+  },
+  {
+   "site": "www.reddit.com",
+   "title": "r/houseplants: my monstera finally has a new leaf",
+   "label": "none"
+  },
+  {
+   "site": "docs.google.com",
+   "title": "Q4 planning notes - Google Docs",
+   "label": "none"
+  }
+ ]
+}

@@ -26,3 +26,7 @@ Other review #2 fixes:
 - The mock's first-option lean now really changes the probabilities, so it can exercise `order-disagree`.
 
 Not changed: 404 is still a per-tab `bad_request`, but the "all calls rejected" rule turns a retired model id into a clear run error, which covers the case the reviewer worried about.
+
+## 4. Eval harness
+
+`npm run eval` makes one pass over the API that collects *both* option orders for every model-routed tab, then sweeps thresholds 0.50–0.95 in code. Trying ten thresholds therefore costs the same as trying one, and the same data shows how often reversing the order changes the answer. Before it makes any call, the run computes how many requests it needs and refuses if that's over `--max-calls` (default 100). The provider also counts real HTTP attempts as a hard stop. Domain-table rows are reported separately and left out of the reliability bins, because they're p = 1 by construction and would make calibration look better than it is. Everything produced from `synthetic.dev.json` or with `--mock` gets a red "NOT A REAL RESULT" banner in the CSV, JSON and SVG. Your real labels (`eval/labeled.json`) and the per-row outputs are gitignored. Only the aggregates in `eval/results/` are meant for git.
