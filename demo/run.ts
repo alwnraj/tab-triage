@@ -16,7 +16,8 @@
  * real toolbar clicks need xdotool (Linux only) and aren't reliable, so we don't fake them.
  */
 import { type ChildProcess, execFileSync, spawn } from "node:child_process";
-import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { parseArgs } from "node:util";
 import { launchWithExtension } from "../scripts/browser.js";
@@ -47,6 +48,8 @@ function run(cmd: string, a: string[]) {
 
 // ---------- preflight ----------
 const key = process.env.TYPESAFE_API_KEY ?? "";
+// Keep the key out of every child process (Chromium, ffmpeg) we spawn from here on.
+delete process.env.TYPESAFE_API_KEY;
 if (!MOCK && !key) {
   console.error("Real demo needs TYPESAFE_API_KEY in the environment. For a rehearsal, run `npm run demo -- --mock`.");
   process.exit(1);
@@ -81,6 +84,16 @@ const urls = (JSON.parse(readFileSync("demo/urls.json", "utf8")) as { tabs: Arra
 console.log(`[demo] building extension…`);
 run("node", ["scripts/build.mjs"]);
 
+// A run killed with SIGKILL or a crash can't clean up after itself, and chrome.storage's
+// remove() is only a logical delete, so sweep profiles left by earlier runs.
+for (const d of readdirSync(tmpdir())) {
+  if (!d.startsWith("tab-triage-profile-")) continue;
+  const p = join(tmpdir(), d);
+  try {
+    if (Date.now() - statSync(p).mtimeMs > 10 * 60_000) rmSync(p, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
+  } catch {}
+}
+
 // ---------- browser ----------
 const WIN = mac ? { width: 1280, height: 720 } : { width: 1920, height: 1080 };
 const { ctx, sw, extId, profileDir } = await launchWithExtension({
@@ -89,13 +102,25 @@ const { ctx, sw, extId, profileDir } = await launchWithExtension({
   args: [`--window-size=${WIN.width},${WIN.height}`, "--window-position=0,0", "--hide-crash-restore-bubble", "--disable-session-crashed-bubble"],
 });
 let recorder: ChildProcess | null = null;
-// If interrupted, still delete the temporary profile (it may hold the API key) and stop capture.
+const raw = join(OUT, `${PREFIX}raw.mkv`);
+const removeProfile = () => rmSync(profileDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
+// If interrupted: stop capture, close Chromium FIRST (deleting a profile it is still writing
+// can fail half-way), then delete the profile (it may hold the API key) and the raw capture.
 for (const sig of ["SIGINT", "SIGTERM", "SIGHUP"] as const)
-  process.on(sig, () => {
-    recorder?.kill("SIGINT");
-    rmSync(profileDir, { recursive: true, force: true });
+  process.on(sig, async () => {
+    recorder?.kill("SIGKILL");
+    await Promise.race([ctx.close().catch(() => undefined), sleep(3000)]);
+    try {
+      removeProfile();
+    } catch {}
+    if (!args["keep-raw"]) rmSync(raw, { force: true });
     process.exit(130);
   });
+process.on("exit", () => {
+  try {
+    removeProfile();
+  } catch {}
+});
 try {
   const windowId: number = await sw.evaluate(async (w) => {
     const [win] = await chrome.windows.getAll({ windowTypes: ["normal"] });
@@ -121,10 +146,14 @@ try {
   );
   await sleep(2500);
   // Bot-check interstitials make bad demo tabs; name them so urls.json can be fixed.
+  const blocked: string[] = [];
   for (const [i, p] of pages.entries()) {
     const title = await p.title().catch(() => "");
-    if (/just a moment|attention required|verify you are human|access denied|are you a robot/i.test(title)) console.warn(`  (bot check: ${urls[i]} → "${title}")`);
+    if (/just a moment|attention required|verify you are human|access denied|are you a robot/i.test(title)) blocked.push(`${urls[i]} → "${title}"`);
   }
+  for (const b of blocked) console.warn(`  (bot check: ${b})`);
+  // A rehearsal can live with them; the published video shouldn't show challenge pages.
+  if (blocked.length && !MOCK) throw new Error(`${blocked.length} page(s) served a bot check: replace them in demo/urls.json and re-run`);
   await sw.evaluate(async (wid) => {
     const tabs = await chrome.tabs.query({ windowId: wid });
     await chrome.tabs.update(tabs[0]!.id!, { active: true });
@@ -138,7 +167,6 @@ try {
   console.log(`[demo] window ${JSON.stringify(bounds)} on screen ${screenInfo.w}x${screenInfo.h} @${screenInfo.dpr}x`);
 
   // ---------- record ----------
-  const raw = join(OUT, `${PREFIX}raw.mkv`);
   const events: Record<string, number> = {};
   let t0 = Date.now();
   const mark = (name: string) => {
@@ -238,11 +266,12 @@ try {
   } else {
     await ctx.close();
     await edit(raw, log, report, { mock: MOCK, keepRaw: args["keep-raw"] === true });
-    if (!args["keep-raw"]) rmSync(raw, { force: true });
   }
 } finally {
-  if (recorder) recorder.kill("SIGINT");
+  if (recorder) recorder.kill("SIGKILL");
   await ctx.close().catch(() => undefined);
-  rmSync(profileDir, { recursive: true, force: true });
+  removeProfile();
+  // The raw capture is the whole screen: never leave it behind, even when editing failed.
+  if (!args["keep-raw"]) rmSync(raw, { force: true });
 }
 

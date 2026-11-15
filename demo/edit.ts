@@ -19,7 +19,9 @@ export interface RunLog {
 }
 
 export async function edit(raw: string, log: RunLog, report: SortReport, opts: { mock: boolean; keepRaw?: boolean }) {
-  const MOCK = opts.mock;
+  // Either signal marks the run as a rehearsal; the committed assets need both to say "real".
+  const MOCK = opts.mock || report.mock;
+  if (!MOCK && !report.classifierId.startsWith("typesafe:")) throw new Error(`Refusing to write the published demo from classifier ${report.classifierId}`);
   const PREFIX = MOCK ? "rehearsal-" : "";
   console.log("[demo] editing…");
   const [rw] = run("ffprobe", ["-v", "error", "-select_streams", "v:0", "-show_entries", "stream=width,height", "-of", "csv=p=0", raw]).trim().split(",").map(Number);
@@ -54,7 +56,7 @@ export async function edit(raw: string, log: RunLog, report: SortReport, opts: {
   files.push("s00.mp4");
   for (const [i, s] of segs.entries()) {
     const cap = join(tmp, `c${i}.png`);
-    await caption(page, cap, s.text, s.sub);
+    await caption(page, cap, s.text, s.sub, MOCK);
     const f = `s${String(i + 1).padStart(2, "0")}.mp4`;
     run("ffmpeg", [
       "-y", "-ss", s.from.toFixed(3), "-to", s.to.toFixed(3), "-i", raw, "-i", cap,

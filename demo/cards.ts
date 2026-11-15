@@ -26,7 +26,7 @@ export async function titleCard(page: Page, path: string, mode: string) {
   );
 }
 
-export async function caption(page: Page, path: string, text: string, sub?: string) {
+export async function caption(page: Page, path: string, text: string, sub?: string, mock = false) {
   await shot(
     page,
     // Centred over the page area left of the popup window (which covers about the right 35%
@@ -36,7 +36,8 @@ export async function caption(page: Page, path: string, text: string, sub?: stri
         <div style="font-size:46px;font-weight:700">${esc(text)}</div>
         ${sub ? `<div style="font-size:30px;color:#c4c7c5;margin-top:8px">${esc(sub)}</div>` : ""}
       </div>
-    </div>`,
+    </div>
+    ${mock ? `<div style="position:absolute;left:24px;top:150px;background:#c5221f;color:#fff;font-size:26px;font-weight:800;letter-spacing:1px;border-radius:10px;padding:8px 16px">MOCK · REHEARSAL, NOT THE MODEL</div>` : ""}`,
     path,
     true,
   );
