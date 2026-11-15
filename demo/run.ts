@@ -23,7 +23,6 @@ import { parseArgs } from "node:util";
 import { launchWithExtension } from "../scripts/browser.js";
 import type { SortReport } from "../src/core/sort.js";
 import { DEFAULT_GROUPS } from "../src/settings.js";
-import { typesafeKey } from "../scripts/env.js";
 import { edit } from "./edit.js";
 
 const { values: args } = parseArgs({
@@ -48,7 +47,7 @@ function run(cmd: string, a: string[]) {
 }
 
 // ---------- preflight ----------
-const key = typesafeKey();
+const key = process.env.TYPESAFE_API_KEY ?? "";
 // Keep the key out of every child process (Chromium, ffmpeg) we spawn from here on.
 delete process.env.TYPESAFE_API_KEY;
 if (!MOCK && !key) {

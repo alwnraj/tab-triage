@@ -16,7 +16,6 @@ import { type Classifier, ClassifierError } from "../src/providers/classifier.js
 import { MockClassifier } from "../src/providers/mock.js";
 import { TypeSafeClassifier } from "../src/providers/typesafe.js";
 import { DEFAULT_GROUPS } from "../src/settings.js";
-import { typesafeKey } from "../scripts/env.js";
 import { chartSvg } from "./chart.js";
 import { calibrationPairs, type EvalRow, isSyntheticData, orderStats, reliability, sweep } from "./metrics.js";
 
@@ -82,7 +81,7 @@ let attempts = 0;
 let classifier: Classifier;
 if (mock) classifier = new MockClassifier();
 else {
-  const key = typesafeKey();
+  const key = process.env.TYPESAFE_API_KEY ?? "";
   if (!key) {
     console.error("TYPESAFE_API_KEY is not set. Export it in your shell (never commit it), or use --mock for a pipeline check.");
     process.exit(1);

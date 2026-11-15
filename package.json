@@ -10,10 +10,10 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "eval:label": "tsx eval/label.ts",
-    "eval": "tsx eval/run.ts",
-    "demo": "tsx demo/run.ts",
+    "eval": "tsx --env-file-if-exists=.env eval/run.ts",
+    "demo": "tsx --env-file-if-exists=.env demo/run.ts",
     "test:e2e": "npm run build && tsx test/e2e/smoke.ts",
-    "probe": "tsx eval/probe.ts"
+    "probe": "tsx --env-file-if-exists=.env eval/probe.ts"
   },
   "devDependencies": {
     "@types/chrome": "^0.3.7",

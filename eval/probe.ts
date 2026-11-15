@@ -1,5 +1,5 @@
 /**
- * npm run probe   (key from TYPESAFE_API_KEY or the gitignored .env)
+ * npm run probe   (key from TYPESAFE_API_KEY; the npm script loads the gitignored .env)
  *
  * A small, capped check against the live API before any larger run: does it accept the
  * exact request the extension sends, does the response parse, what does it cost, and do
@@ -17,7 +17,6 @@ import type { Order } from "../src/core/types.js";
 import { buildRequest } from "../src/providers/request.js";
 import { parseResponse } from "../src/providers/typesafe.js";
 import { DEFAULT_GROUPS } from "../src/settings.js";
-import { typesafeKey } from "../scripts/env.js";
 
 const MAX_ATTEMPTS = 15;
 
@@ -36,9 +35,9 @@ const CASES: Array<{ site: string; title: string; expect: string; kind: string; 
   { site: "www.weather.gov", title: "National Weather Service", expect: "none", kind: "fits nothing", orders: ["fwd"] },
 ];
 
-const key = typesafeKey();
+const key = process.env.TYPESAFE_API_KEY ?? "";
 if (!key) {
-  console.error("No key: set TYPESAFE_API_KEY, or put it in a gitignored .env (it is never printed or saved).");
+  console.error("No key: set TYPESAFE_API_KEY, or put it in the gitignored .env and use `npm run probe` (it is never printed or saved).");
   process.exit(1);
 }
 const planned = CASES.reduce((n, c) => n + c.orders.length, 0);

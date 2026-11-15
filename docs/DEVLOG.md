@@ -91,7 +91,7 @@ The skill also says to get permission and a budget before probing the live API, 
 
 ## 10. First live API probe
 
-`npm run probe` sent 13 requests to `jev-1.14.0`: 11 public demo pages, with two of them also asked in reversed order. The key came from a gitignored `.env` (`scripts/env.ts`, which tolerates `KEY= "value"`), and nothing about it was printed. This is a smoke test with 11 cases I picked, **not an accuracy result**: the eval with real labels is still pending.
+`npm run probe` sent 13 requests to `jev-1.14.0`: 11 public demo pages, with two of them also asked in reversed order. The key came from a gitignored `.env`, which the npm scripts load with Node's built-in `--env-file-if-exists` flag, and nothing about it was printed. This is a smoke test with 11 cases I picked, **not an accuracy result**: the eval with real labels is still pending.
 
 What it settled:
 - **The request and response shapes are right.** The API accepted the extension's exact payload (structured Noul instructions included) and every response parsed: `{model, answers, usage}`. A bad key returns a 401 with `authentication_error`, which the provider reports as an error.

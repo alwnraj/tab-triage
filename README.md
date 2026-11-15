@@ -64,7 +64,7 @@ TypeSafe charges per input token; output tokens are free. The price is one const
 > **Results: pending real labels.** No accuracy numbers are reported yet. `eval/synthetic.dev.json` holds hand-written examples for building the pipeline only, and anything produced from it is stamped *SYNTHETIC: NOT A REAL RESULT* and gitignored. (One early commit included a stamped synthetic mock run; the next commit removed it.) The eval detects the synthetic set from its contents, not only from a flag.
 
 1. `npm run eval:label` writes `eval/labeled.json` from your open tabs (hostname and title only). On macOS it reads them from Chrome through AppleScript. Anywhere else, use Options → *Export open tabs for labelling* with `--from <file>`. Then fill in each `label` with a group id or `"none"`. The file is gitignored.
-2. `TYPESAFE_API_KEY=… npm run eval` makes one API pass, collecting both option orders per tab. It refuses to start if it would need more than `--max-calls` (default 100) requests. It then reports:
+2. `npm run eval` makes one API pass, collecting both option orders per tab. It refuses to start if it would need more than `--max-calls` (default 100) requests. It then reports:
    - **coverage and accuracy** at thresholds 0.50–0.95 (coverage = share of tabs grouped; accuracy = share of grouped tabs that went to the right group),
    - **reliability bins** for the Choice probability and the Noul (is "0.9" right about 90% of the time?) plus ECE,
    - how often reversing the option order changed the answer,
@@ -76,6 +76,10 @@ TypeSafe charges per input token; output tokens are free. The price is one const
 `npm run demo` records the real extension in a headed Chromium with a **fresh temporary profile** (none of your tabs, bookmarks or accounts), opening ~30 public, logged-out pages from [`demo/urls.json`](demo/urls.json), six of which are deliberately ambiguous (marked in the file). It captures the screen with ffmpeg (avfoundation on macOS, x11grab under Xvfb on Linux), so the **real tab strip** is in frame, unlike Playwright's page-only `recordVideo`. The popup is opened in a popup-type window next to the strip and clicked by Playwright rather than through the toolbar button, because synthetic toolbar clicks aren't reliable. Captions and cards are rendered as images, and the end card's latency, cost and percent-sorted figures are read from that run's own report. The published video uses the real classifier. `--mock` is for rehearsal only: every caption carries a red MOCK badge, and the committed GIF and poster can only be written by a real-classifier run.
 
 Before recording on macOS, turn on **Do Not Disturb** and close anything that might pop up. avfoundation captures the whole screen. The edit crops to the browser window and writes `demo/out/frame-check.png`. **Look at it before committing the GIF**: with several displays, "Capture screen 0" may not be the screen Chromium opened on. The raw capture is deleted when the run ends, also when editing fails. In a real run the API key is kept out of the processes the script starts and written only into the throwaway profile. It is removed from the extension's storage as soon as the sort finishes, but that is a logical delete: the real protection is that the profile is deleted on exit (including Ctrl-C), and the next run sweeps any profile a crashed run left behind. The script also checks that screen capture works before it starts, and a real run stops if any page serves a bot check.
+
+## API key for the scripts
+
+`npm run probe`, `npm run eval` and `npm run demo` read `TYPESAFE_API_KEY` from the environment. The npm scripts also load a `.env` file in the repo root if there is one (Node's `--env-file-if-exists`), so you can keep the key there as `TYPESAFE_API_KEY="…"`. `.env` is gitignored. `npm run probe` is a capped check of 13 requests on public pages, to try before anything larger.
 
 ## Development
 
