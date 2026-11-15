@@ -4,12 +4,12 @@ A Chrome extension that sorts your open tabs into **native Chrome tab groups**, 
 
 ![tab-triage sorting 30 real tabs into Chrome tab groups, then undoing it](demo/demo.gif)
 
-*Real extension, real Chromium tab strip, real toolbar dropdown, real classifier (TypeSafe `jev-1.14.0`), recorded with `npm run demo`. On this run: 26 of 30 tabs grouped, 4 left alone, 1.6 s, $0.00075 for 30 API calls (one was a reversed-order re-ask). One run on 30 public pages, not an accuracy result.*
+*Real extension, real Chromium tab strip, real toolbar dropdown, real classifier (TypeSafe `jev-1.14.0`), recorded with `npm run demo`. On this run: 25 of 30 tabs grouped, 5 left alone, 3.5 s, $0.00073 for 29 API calls. One run on 30 public pages, not an accuracy result.*
 
 ## What it does
 
-1. **Popup.** **Sort tabs** asks the classifier about the tabs in the current window and moves the confident ones into colored, named groups. A **threshold slider** (default 0.80) sets how confident it has to be. A results list shows every tab with the group it went to and its probability, or why it was left alone. The footer shows the **measured latency** and the **estimated cost** of the last run, worked out from the input tokens the API reports.
-2. **Options page.** Here you define your groups (name, color, a plain-language description that serves as the classification criterion, and an optional domain list). You also set your API key and a domain blocklist, and there's a plain **"what gets sent"** panel.
+1. **Toolbar popup.** Kept deliberately small: **Sort tabs**, **Undo**, and a settings button. Sort asks the classifier about the tabs in the current window and moves the confident ones into colored, named groups. The results list shows the tabs it left alone first, each with its probability and why, then the grouped ones. The popup updates live while a sort runs.
+2. **Options page.** Here you set the **confidence threshold** (default 0.80) and define your groups (name, color, a plain-language description that serves as the classification criterion, and an optional domain list). You also set your API key and a domain blocklist, and there's a plain **"what gets sent"** panel. A **"Last sort"** line shows the measured latency and the estimated cost of the most recent run, worked out from the input tokens the API reports.
 3. **Undo** restores each tab's original position and group, including groups you had made yourself before sorting.
 
 ## Install (load unpacked)
