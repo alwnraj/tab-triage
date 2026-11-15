@@ -35,7 +35,9 @@ try {
     await chrome.storage.local.set({ settings: { ...settings, consentAt: Date.now(), mockMode: true, collapse: false } });
   });
 
-  const first = ctx.pages()[0] ?? (await ctx.newPage());
+  // Fresh tabs only: on install the extension opens its Options page, which can take over
+  // the initial blank tab mid-navigation.
+  const first = await ctx.newPage();
   await first.goto(PAGES[0]![0], { waitUntil: "domcontentloaded" });
   for (const [u] of PAGES.slice(1)) await (await ctx.newPage()).goto(u, { waitUntil: "domcontentloaded" });
 
@@ -58,10 +60,16 @@ try {
   const popup = await ctx.newPage();
   await popup.goto(`chrome-extension://${extId}/popup.html?window=${windowId}`);
   const beforeWithPopup = await strip();
+  // Threshold stepper and presets: +0.05 from the default, then back with a preset.
+  await popup.click("#t-up");
+  assert.equal(await popup.textContent("#tval"), "0.85");
+  await popup.click("#presets button[aria-label='Threshold 0.80']");
+  assert.equal(await popup.textContent("#tval"), "0.80");
+  assert.equal(await popup.getAttribute("#presets button[aria-label='Threshold 0.80']", "aria-pressed"), "true");
   await popup.click("#sort");
   await popup.waitForSelector("#results li", { timeout: 20_000 });
   const after = await strip();
-  const footer = await popup.textContent("#footer");
+  const footer = await popup.textContent("footer");
   console.log("footer:", footer?.replace(/\s+/g, " "));
   assert.match(footer ?? "", /MOCK/);
 
@@ -112,6 +120,20 @@ try {
   const named = (st: Strip) => st.tabs.map((t) => [t.title, st.groups.find((g) => g.id === t.groupId)?.title ?? null]);
   assert.deepEqual(named(post), named(pre), "order and grouping restored around a pre-existing group");
   assert.deepEqual(post.groups.map((g) => [g.title, g.color]), pre.groups.map((g) => [g.title, g.color]));
+
+  // Live popup: a sort started outside the popup (as the demo does with the toolbar
+  // dropdown) must show up in an already-open popup without clicking anything.
+  await sw.evaluate(async (wid) => {
+    const t = (globalThis as { tabTriage?: { handle(m: unknown): Promise<unknown> } }).tabTriage!;
+    await t.handle({ type: "sort", windowId: wid, threshold: 0.8 });
+  }, windowId);
+  await popup.waitForFunction(() => !(document.getElementById("message")?.textContent ?? "").includes("Undone") && !!document.querySelector("#summary .chip"), null, { timeout: 10_000 });
+  assert.equal(await popup.isEnabled("#undo"), true, "popup picked up the new run");
+  await sw.evaluate(async (wid) => {
+    const t = (globalThis as { tabTriage?: { handle(m: unknown): Promise<unknown> } }).tabTriage!;
+    await t.handle({ type: "undo", windowId: wid });
+  }, windowId);
+  await popup.waitForFunction(() => (document.getElementById("message")?.textContent ?? "").includes("Undone"), null, { timeout: 10_000 });
 
   console.log("E2E smoke: PASS");
 } finally {

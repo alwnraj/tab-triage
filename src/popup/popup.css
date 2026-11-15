@@ -1,20 +1,57 @@
-body { width: 400px; }
-main { padding: 12px; }
-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; font-size: 14px; }
-header a { font-size: 12px; }
-.controls { display: flex; gap: 8px; }
-.controls #sort { flex: 1; padding: 8px 12px; }
-.slider { display: block; margin: 12px 0 4px; }
-.slider span { display: flex; justify-content: space-between; color: var(--muted); }
-.slider output { color: var(--text); font-variant-numeric: tabular-nums; font-weight: 600; }
-.slider input { width: 100%; accent-color: var(--accent); }
-#results { list-style: none; margin: 8px 0 0; padding: 0; max-height: 360px; overflow-y: auto; }
-#results li {
-  display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; padding: 6px 2px; border-top: 1px solid var(--line);
+/* Toolbar dropdown: compact, tile-based. Colours come from common.css tokens (light + dark). */
+/* Chrome caps an action popup at 600px tall: the results list takes what is left, so the footer always shows. */
+body { width: 348px; max-height: 600px; background: var(--bg); }
+main { display: flex; flex-direction: column; max-height: 600px; padding: 14px 14px 0; }
+
+.tile {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  min-height: 44px; padding: 0 12px; border-radius: 14px;
+  background: var(--tile); border: 1px solid var(--tile-line); color: var(--text);
+  font-size: 15px; font-variant-numeric: tabular-nums;
+  transition: background 0.12s, border-color 0.12s, transform 0.06s;
 }
-#results .title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-#results .prob { font-variant-numeric: tabular-nums; text-align: right; }
-#results .where { grid-column: 1 / -1; color: var(--muted); font-size: 12px; }
+button.tile:hover:not(:disabled) { background: var(--tile-hover); }
+button.tile:active:not(:disabled) { transform: scale(0.98); }
+.tile.primary, .tile.on { background: var(--pick); color: var(--pick-text); border-color: transparent; font-weight: 700; }
+button.tile.primary:hover:not(:disabled) { background: var(--pick-hover); }
+.tile svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+.actions { display: grid; grid-template-columns: 1fr auto; gap: 10px; }
+.actions .primary { min-height: 52px; font-size: 16px; }
+.actions #undo { padding: 0 16px; }
+
+.threshold { margin-top: 16px; }
+.label { color: var(--muted); font-size: 12px; margin: 0 2px 8px; }
+.stepper { display: grid; grid-template-columns: 1fr 1.15fr 1fr; gap: 10px; }
+.stepper .value { font-size: 20px; font-weight: 700; background: var(--pick); color: var(--pick-text); border-color: transparent; }
+.presets { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 10px; }
+.presets .tile { min-height: 36px; border-radius: 11px; font-size: 14px; padding: 0; }
+
+.summary { display: flex; gap: 8px; margin-top: 12px; }
+.summary, .actions, .threshold, footer, .banner { flex: none; }
+.summary .chip { flex: 1; padding: 6px 10px; border-radius: 12px; background: var(--tile); border: 1px solid var(--tile-line); }
+.summary .chip b { display: block; font-size: 18px; font-variant-numeric: tabular-nums; }
+.summary .chip span { color: var(--muted); font-size: 12px; }
+
+#results { list-style: none; margin: 8px 0 0; padding: 0; flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+#results h3 { margin: 10px 2px 4px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+#results li { display: grid; grid-template-columns: 1fr auto; gap: 1px 8px; padding: 7px 8px; border-radius: 10px; }
+#results li:hover { background: var(--tile); }
+#results .title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; font-weight: 500; }
+#results .prob { font-size: 12px; font-variant-numeric: tabular-nums; text-align: right; color: var(--muted); }
+#results .where { grid-column: 1 / -1; color: var(--muted); font-size: 11.5px; }
 #results li.ungrouped .title { color: var(--muted); }
-#results h3 { margin: 10px 0 2px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
-footer { margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--line); font-size: 12px; font-variant-numeric: tabular-nums; }
+
+footer {
+  display: flex; align-items: center; gap: 10px;
+  margin: 14px -14px 0; padding: 10px 10px 10px 16px; border-top: 1px solid var(--line); background: var(--footer);
+}
+.metrics { flex: 1; font-size: 11.5px; line-height: 1.45; color: var(--muted); font-variant-numeric: tabular-nums; }
+.metrics:empty::before { content: "Sorts only the tabs in this window."; }
+button.icon {
+  width: 38px; height: 38px; padding: 0; border: 0; border-radius: 50%; background: transparent; color: var(--muted);
+  display: inline-flex; align-items: center; justify-content: center;
+}
+button.icon:hover { background: var(--tile); color: var(--text); }
+button.icon svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+.banner button { margin-top: 6px; }

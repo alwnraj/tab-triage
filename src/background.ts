@@ -17,6 +17,8 @@ let running = false;
 
 const reportKey = (w: number) => `report:${w}`;
 const undoKey = (w: number) => `undo:${w}`;
+/** Present while a sort or undo runs, so an open popup can show it live. */
+const runKey = (w: number) => `run:${w}`;
 
 chrome.runtime.onInstalled.addListener(async ({ reason }) => {
   const s = await loadSettings(local);
@@ -53,6 +55,7 @@ async function handle(msg: unknown): Promise<Response> {
   if (running) return { ok: false, error: "A sort is already running.", running, ...(await state(req.windowId)) };
 
   running = true;
+  await session.set({ [runKey(req.windowId)]: req.type });
   try {
     if (req.type === "undo") {
       const snap = (await session.get([undoKey(req.windowId)]))[undoKey(req.windowId)] as Snapshot | undefined;
@@ -62,7 +65,9 @@ async function handle(msg: unknown): Promise<Response> {
       const s = await state(req.windowId);
       const note =
         (r.missing ? ` (${r.missing} tab(s) had been closed)` : "") + (r.exact ? "" : " Some tabs could not be put back exactly.");
-      return { ok: true, running: false, ...s, report: s.report ? { ...s.report, message: `Undone${note}.` } : null };
+      const report = s.report ? { ...s.report, message: `Undone${note}.` } : null;
+      if (report) await session.set({ [reportKey(req.windowId)]: report });
+      return { ok: true, running: false, ...s, report };
     }
 
     const settings = await loadSettings(local);
@@ -94,8 +99,13 @@ async function handle(msg: unknown): Promise<Response> {
     return { ok: false, error: "Something went wrong. No further tabs were moved; try Undo if anything changed." };
   } finally {
     running = false;
+    await session.remove([runKey(req.windowId)]).catch(() => undefined);
   }
 }
+
+// For automation (the demo drives a sort while the real toolbar popup is open, which
+// Playwright can't click into). Only code already running inside this worker can reach it.
+(globalThis as { tabTriage?: unknown }).tabTriage = { handle };
 
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   // Only our own extension pages may drive the worker.
