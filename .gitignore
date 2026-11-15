@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.env
+.env.*
+demo/out/
+eval/labeled.json
+eval/tabs-export*.json
+eval/out/
+*.log
+.DS_Store
