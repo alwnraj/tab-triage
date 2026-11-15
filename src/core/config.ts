@@ -20,6 +20,10 @@ export const API_BASE = "https://api.typesafe.ai";
 declare const __SERVICE_URL__: string | undefined;
 export const SERVICE_URL: string = typeof __SERVICE_URL__ === "string" ? __SERVICE_URL__ : "https://tab-triage-pi.vercel.app";
 
+/** True in store builds (npm run package): developer-only features such as mock mode are off. */
+declare const __RELEASE__: boolean | undefined;
+export const RELEASE: boolean = typeof __RELEASE__ === "boolean" && __RELEASE__;
+
 /** Limits the service enforces on each request (shared by the client and proxy/). */
 export const MAX_GROUPS = 12;
 export const MAX_DESCRIPTION = 500;

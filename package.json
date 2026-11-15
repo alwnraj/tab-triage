@@ -1,6 +1,6 @@
 {
   "name": "tab-triage",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "description": "Chrome extension that sorts open tabs into native tab groups using calibrated decisions.",
   "license": "MIT",
@@ -13,7 +13,8 @@
     "eval": "tsx --env-file-if-exists=.env eval/run.ts",
     "demo": "tsx --env-file-if-exists=.env demo/run.ts",
     "test:e2e": "npm run build && tsx test/e2e/smoke.ts",
-    "probe": "tsx --env-file-if-exists=.env eval/probe.ts"
+    "probe": "tsx --env-file-if-exists=.env eval/probe.ts",
+    "package": "node scripts/package.mjs"
   },
   "devDependencies": {
     "@types/chrome": "^0.3.7",

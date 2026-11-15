@@ -7,6 +7,7 @@ import { parseRequest, type Response } from "./messages.js";
 import type { Classifier } from "./providers/classifier.js";
 import { ClassifierError } from "./providers/classifier.js";
 import { MockClassifier } from "./providers/mock.js";
+import { RELEASE } from "./core/config.js";
 import { HostedClassifier } from "./providers/hosted.js";
 import { chromeKV, installId, loadSettings, removeLegacyApiKey, saveSettings } from "./settings.js";
 
@@ -78,7 +79,8 @@ async function handle(msg: unknown): Promise<Response> {
 
     let classifier: Classifier;
     try {
-      classifier = await makeClassifier(settings.mockMode);
+      // Mock mode is a developer tool; a store build ignores a stale setting.
+      classifier = await makeClassifier(settings.mockMode && !RELEASE);
     } catch (e) {
       return { ok: false, error: e instanceof ClassifierError ? e.message : "Couldn't start the classifier." };
     }

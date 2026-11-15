@@ -79,6 +79,10 @@ TypeSafe charges per input token; output tokens are free. The price is one const
 
 Before recording on macOS, turn on **Do Not Disturb** and close anything that might pop up. avfoundation captures the whole screen. The edit crops to the browser window and writes `demo/out/frame-check.png`. **Look at it before committing the GIF**: with several displays, "Capture screen 0" may not be the screen Chromium opened on. The raw capture is deleted when the run ends, also when editing fails. A real run uses the hosted service, so no key goes into the browser profile. The profile is still deleted on exit (including Ctrl-C), and the next run sweeps any profile a crashed run left behind. The script also checks that screen capture works before it starts, and a real run stops if any page serves a bot check.
 
+## Publishing
+
+`npm run package` builds the store release (mock mode hidden; checks that the only host permission is the HTTPS service) and writes `release/tab-triage-<version>.zip`. Everything the Chrome Web Store dashboard asks for is in [`store/listing.md`](store/listing.md): description, single purpose, permission justifications, data-use answers, reviewer instructions, and the 1280×800 screenshots and promo tile in `store/`, which `npx tsx store/make-assets.ts` regenerates from the latest real-classifier demo.
+
 ## Hosted service
 
 The extension calls a small service in [`proxy/`](proxy/README.md): one Vercel Edge Function that holds the TypeSafe key. It accepts only tab-triage's request shape and builds the questions itself, so it can't be used as a general TypeSafe proxy. It checks the origin, rate-limits per install and per IP, and stops for the day at a spending cap. It never logs titles or hostnames. Setup, limits and local testing are in [proxy/README.md](proxy/README.md).

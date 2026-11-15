@@ -1,4 +1,4 @@
-import { MODEL_ID, SERVICE_URL } from "../core/config.js";
+import { MODEL_ID, RELEASE, SERVICE_URL } from "../core/config.js";
 import { type HostedRequest, INSTALL_HEADER } from "../providers/wire.js";
 import { AnswerCache } from "../core/cache.js";
 import { toModelGroups } from "../core/groups.js";
@@ -120,6 +120,7 @@ async function init() {
   renderGroups();
   renderConsent();
   renderExample();
+  if (RELEASE) $("mock-row").classList.add("hidden");
   $("service-host").textContent = new URL(SERVICE_URL).host;
   $<HTMLAnchorElement>("privacy-link").href = `${SERVICE_URL}/privacy`;
   $<HTMLTextAreaElement>("blocklist").value = s.blocklist.join("\n");

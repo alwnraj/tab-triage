@@ -6,6 +6,8 @@ import { deflateSync } from "node:zlib";
 const out = "dist";
 // The hosted service the extension calls. Override for a local or staging server:
 //   TAB_TRIAGE_SERVICE=http://localhost:8787 npm run build
+// Release builds (npm run package) hide developer-only features such as mock mode.
+const RELEASE = process.env.TAB_TRIAGE_RELEASE === "1";
 const SERVICE = new URL(process.env.TAB_TRIAGE_SERVICE ?? "https://tab-triage-pi.vercel.app").origin;
 rmSync(out, { recursive: true, force: true });
 mkdirSync(`${out}/icons`, { recursive: true });
@@ -24,7 +26,7 @@ await build({
   sourcemap: false,
   legalComments: "none",
   logLevel: "info",
-  define: { __SERVICE_URL__: JSON.stringify(SERVICE) },
+  define: { __SERVICE_URL__: JSON.stringify(SERVICE), __RELEASE__: JSON.stringify(RELEASE) },
 });
 
 for (const [from, to] of [
@@ -39,7 +41,7 @@ for (const [from, to] of [
 const manifest = JSON.parse(readFileSync("src/manifest.json", "utf8"));
 manifest.host_permissions = [`${SERVICE}/*`];
 writeFileSync(`${out}/manifest.json`, JSON.stringify(manifest, null, 2) + "\n");
-console.log(`Service: ${SERVICE}`);
+console.log(`Service: ${SERVICE}${RELEASE ? " (release build)" : ""}`);
 
 // --- Icons: drawn in code so the repo has no binary assets to maintain. ---
 // A rounded square with three coloured "tab group" bars of decreasing length.
