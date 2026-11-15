@@ -12,7 +12,8 @@
     "eval:label": "tsx eval/label.ts",
     "eval": "tsx eval/run.ts",
     "demo": "tsx demo/run.ts",
-    "test:e2e": "npm run build && tsx test/e2e/smoke.ts"
+    "test:e2e": "npm run build && tsx test/e2e/smoke.ts",
+    "probe": "tsx eval/probe.ts"
   },
   "devDependencies": {
     "@types/chrome": "^0.3.7",
