@@ -36,8 +36,8 @@ try {
   });
 
   const first = ctx.pages()[0] ?? (await ctx.newPage());
-  await first.goto(PAGES[0]![0]);
-  for (const [u] of PAGES.slice(1)) await (await ctx.newPage()).goto(u);
+  await first.goto(PAGES[0]![0], { waitUntil: "domcontentloaded" });
+  for (const [u] of PAGES.slice(1)) await (await ctx.newPage()).goto(u, { waitUntil: "domcontentloaded" });
 
   type Strip = { tabs: Array<{ title: string; groupId: number; index: number }>; groups: Array<{ id: number; title: string; color: string }> };
   const strip = (): Promise<Strip> =>
