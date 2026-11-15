@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Install tab-triage</title>
+  <meta name="description" content="Download tab-triage and add it to Chrome in about a minute.">
+  <link rel="stylesheet" href="/site.css">
+</head>
+<body>
+  <main>
+    <p><a href="/">tab-triage</a></p>
+    <h1>Install tab-triage</h1>
+    <p class="lead">About a minute, in Chrome or any Chromium browser (Edge, Brave, Arc). No account and no API key.</p>
+
+    <p id="not-chrome" class="note" hidden>This browser doesn't look like Chrome or another Chromium browser. tab-triage needs one of those.</p>
+
+    <a class="button" id="download" href="/download/tab-triage.zip" download>Download tab-triage (zip)</a>
+    <p class="muted">Version <span id="version">1.0</span>. Chrome only lets the Web Store install extensions automatically, so for now there are four short steps. A Chrome Web Store version is on its way.</p>
+
+    <ol class="steps">
+      <li>
+        <h2>Unzip it</h2>
+        <p>Open the downloaded <code>tab-triage.zip</code>. You'll get a folder called <strong>tab-triage</strong>. Move it somewhere it can stay, such as your Documents folder: Chrome loads the extension from that folder, so don't delete it.</p>
+      </li>
+      <li>
+        <h2>Open the extensions page</h2>
+        <p>Paste this into the address bar and press Enter (websites aren't allowed to link to it):</p>
+        <div class="copy"><code id="ext-url">chrome://extensions</code><button type="button" id="copy">Copy</button></div>
+      </li>
+      <li>
+        <h2>Turn on Developer mode</h2>
+        <p>Use the switch in the top-right corner of that page.</p>
+      </li>
+      <li>
+        <h2>Load it</h2>
+        <p>Click <strong>Load unpacked</strong> and choose the <strong>tab-triage</strong> folder from step 1. The tab-triage settings page opens: read what gets sent, then press <strong>I understand, enable sorting</strong>.</p>
+      </li>
+    </ol>
+
+    <h2>Then</h2>
+    <p>Click the puzzle-piece icon in the toolbar and pin tab-triage. Open some tabs, click its icon, and press <strong>Sort tabs</strong>. <strong>Undo</strong> puts everything back.</p>
+
+    <h2>Good to know</h2>
+    <ul>
+      <li>Chrome may show a reminder that a developer-mode extension is installed. That's expected for anything not from the Web Store; choose to keep it.</li>
+      <li>It doesn't update itself. Download it again from this page and press the reload icon on its card in <code>chrome://extensions</code>.</li>
+      <li>To remove it, press <strong>Remove</strong> on its card. That deletes everything it stored.</li>
+      <li>What it sends and keeps: the <a href="/privacy">privacy policy</a>. The source is on <a href="https://github.com/alwnraj/tab-triage">GitHub</a>.</li>
+    </ul>
+  </main>
+  <script>
+    // Progressive enhancement only: the page works without it.
+    const ua = navigator.userAgentData?.brands?.map((b) => b.brand).join(" ") ?? navigator.userAgent;
+    if (!/Chrom|Edg|Brave|Opera/i.test(ua)) document.getElementById("not-chrome").hidden = false;
+    if (/Edg/i.test(ua)) document.getElementById("ext-url").textContent = "edge://extensions";
+    document.getElementById("copy").addEventListener("click", async (e) => {
+      try {
+        await navigator.clipboard.writeText(document.getElementById("ext-url").textContent);
+        e.target.textContent = "Copied";
+        setTimeout(() => (e.target.textContent = "Copy"), 1500);
+      } catch {
+        e.target.textContent = "Select and copy it";
+      }
+    });
+    fetch("/download/version.json").then((r) => r.json()).then((v) => (document.getElementById("version").textContent = v.version)).catch(() => {});
+  </script>
+</body>
+</html>

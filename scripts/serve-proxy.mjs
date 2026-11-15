@@ -26,7 +26,7 @@ createServer(async (req, res) => {
     res.end(Buffer.from(await r.arrayBuffer()));
     return;
   }
-  const page = url.pathname === "/" ? "index.html" : url.pathname === "/privacy" ? "privacy.html" : url.pathname.slice(1);
+  const page = url.pathname === "/" ? "index.html" : ["/privacy", "/install"].includes(url.pathname) ? `${url.pathname.slice(1)}.html` : url.pathname.slice(1);
   const file = normalize(join(out, "static", page));
   if (!file.startsWith(join(out, "static")) || !existsSync(file)) return void res.writeHead(404).end();
   res.writeHead(200, { "content-type": TYPES[extname(file)] ?? "application/octet-stream" }).end(readFileSync(file));

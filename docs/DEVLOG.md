@@ -153,3 +153,11 @@ Version 1.0.0. `npm run package` makes a release build and zips it (26 KB). It r
 `store/listing.md` has every dashboard field: description, single purpose, permission justifications, data use (Web history only, with the three certifications) and reviewer instructions. `store/make-assets.ts` makes the five 1280×800 screenshots and the 440×280 promo tile from the real-classifier demo frames (cropped above the demo's captions) and a real screenshot of the release Options page. It refuses mock recordings.
 
 Verified by unzipping the package into a fresh Chromium profile: consent is required before the first sort, the mock toggle is hidden, and a sort through the live service grouped 2 of 3 tabs and left the world clock alone. The version reads 1.0.0, and the only host permission is the service.
+
+## 17. Install from the website
+
+Chrome won't let a downloaded file install an extension by itself; only the Web Store can. So the site's `/install` page offers a zip and four steps: unzip, open `chrome://extensions` (with a copy button, since web pages can't link to it; `edge://extensions` on Edge), turn on Developer mode, Load unpacked.
+
+- **Pinned id.** An unpacked extension's id normally depends on the folder path, so every user would get a different one and the service's origin allow-list couldn't name it. The download build adds a manifest `key` (a public key in `scripts/download-key.json`; the private half was never kept and isn't needed for unpacked loading), which pins the id to `ophmdbgijgbjigemcpcgcmopkahoehkp`. The store zip must not carry it: `npm run package` writes both and checks the store one has no key.
+- **Built on Vercel.** The Vercel build runs `scripts/package.mjs --download-to`, so the zip on the site always matches the deployed code. A small dependency-free zip writer (`scripts/zip.mjs`) replaces the `zip` command, which Vercel's build image may not have. Fixed timestamps and sorted entries make the output byte-identical for identical input.
+- Verified like a user would: downloaded from a local copy of the site, unzipped with the macOS archiver, loaded the folder in a fresh Chromium. The id matched the pinned one, consent was required, mock mode was hidden, and a sort through the live service grouped 2 of 3 tabs.

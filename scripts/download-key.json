@@ -1,0 +1,5 @@
+{
+  "_note": "PUBLIC key only. Pins the extension id of the website download build (a manifest \"key\"); the private half was never saved and is not needed to load an unpacked extension. The Chrome Web Store build must NOT include it.",
+  "id": "ophmdbgijgbjigemcpcgcmopkahoehkp",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEArhdrURBlpF6ik2vdUm1cqgwem5Rnnsi+N5Yjj7cjhv3zEwgm6WKJfCEjzLoyBDBIhb8u8br/N+tGWFBlIPi71bpp8sv72GFcv8kVc04rWC5imLQrGWw/YKYEsP94bE3cCwCTV//1zIQpWiPnVexWNdRVisg/z2PoJ8dRrf61+2cu6DwXMFy8bUnakMd9BiGiENmywAmOqGSXjj41Kfr75ncg3vRBouL12QDwKBmQLxcHsFiBKMkPkXj6HqmnDz4e6/SRHLzwPl/e+1A07ZNh2xe/wQCA81herbmwnqnbbPDO05zi0EskTJJ2golOx5lsUnxUjB0n4U6kvCZ1yX0O7wIDAQAB"
+}

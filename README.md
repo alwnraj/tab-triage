@@ -12,7 +12,11 @@ A Chrome extension that sorts your open tabs into **native Chrome tab groups**, 
 2. **Options page.** Here you set the **confidence threshold** (default 0.80) and define your groups (name, color, a plain-language description that serves as the classification criterion, and an optional domain list). You also set a domain blocklist, and there's a plain **"what gets sent"** panel. A **"Last sort"** line shows the measured latency and the estimated cost of the most recent run, worked out from the input tokens the API reports.
 3. **Undo** restores each tab's original position and group, including groups you had made yourself before sorting.
 
-## Install (load unpacked)
+## Install
+
+**For anyone:** go to [tab-triage-pi.vercel.app/install](https://tab-triage-pi.vercel.app/install), download the zip and follow the four steps (unzip, open `chrome://extensions`, turn on Developer mode, Load unpacked). Chrome only allows automatic installs from the Web Store; a store listing is in review.
+
+**From source:**
 
 ```bash
 npm ci

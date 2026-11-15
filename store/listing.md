@@ -4,7 +4,7 @@ Everything to paste into the [developer dashboard](https://chrome.google.com/web
 
 ## Package tab
 
-Upload `release/tab-triage-1.0.0.zip`.
+Upload `release/tab-triage-1.0.0.zip`, **not** the `-download.zip`: that one carries a manifest `key` for the website install, and the store rejects it.
 
 ## Store listing tab
 
@@ -95,8 +95,8 @@ Upload `release/tab-triage-1.0.0.zip`.
 
 ## After it's approved
 
-1. Copy the extension's id from the dashboard and set `ALLOWED_ORIGINS=chrome-extension://<id>` in the Vercel project's environment variables, then redeploy. The service will then refuse requests from any other origin.
+1. Copy the extension's id from the dashboard and set `ALLOWED_ORIGINS=chrome-extension://ophmdbgijgbjigemcpcgcmopkahoehkp,chrome-extension://<store id>` in the Vercel project's environment variables (the first is the website download's fixed id), then redeploy. The service will then refuse requests from any other origin.
 2. Check `https://tab-triage-pi.vercel.app/api/classify` still shows `"limits": true, "limitsReachable": true`.
-3. Add the store link to the README and to `site/index.html`.
+3. Add the store link to the README, `site/index.html` and `site/install.html` (which can then point to the store first and keep the zip as a fallback).
 
 For each update: bump the version in `package.json` and `src/manifest.json`, run `npm run package`, and upload the new zip.
