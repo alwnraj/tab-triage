@@ -65,60 +65,149 @@ const opt = join(TMP, "options.png");
   }
 }
 
-const FONT = `-apple-system, "SF Pro Display", "Segoe UI", Roboto, Helvetica, Arial, sans-serif`;
+// --- Hand-drawn look: paper, a handwriting font, ink arrows and frames, marker scribbles. ---
+const INK = "#2b2a28";
+const PAPER = "#fbf8f1";
+const GROUP_COLORS = ["#1a73e8", "#188038", "#fa903e", "#d93025", "#a142f4"];
+
+/** Seeded random so every run draws the same wobbles. */
+function rng(seed: number) {
+  return () => {
+    seed = (seed + 0x6d2b79f5) | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+type Pt = [number, number];
+/** A smooth path through points, each nudged a little, like a pen line. */
+function wobble(points: Pt[], seed: number, jitter = 2.2): string {
+  const r = rng(seed);
+  const p = points.map(([x, y]) => [x + (r() - 0.5) * jitter, y + (r() - 0.5) * jitter] as Pt);
+  let d = `M${p[0]![0].toFixed(1)},${p[0]![1].toFixed(1)}`;
+  for (let i = 1; i < p.length - 1; i++) {
+    const mx = (p[i]![0] + p[i + 1]![0]) / 2;
+    const my = (p[i]![1] + p[i + 1]![1]) / 2;
+    d += ` Q${p[i]![0].toFixed(1)},${p[i]![1].toFixed(1)} ${mx.toFixed(1)},${my.toFixed(1)}`;
+  }
+  const last = p[p.length - 1]!;
+  return d + ` L${last[0].toFixed(1)},${last[1].toFixed(1)}`;
+}
+/** Points along a curve from a to b, bowed sideways by `bend`. */
+function curve(a: Pt, b: Pt, bend: number, n = 9): Pt[] {
+  const [dx, dy] = [b[0] - a[0], b[1] - a[1]];
+  const [nx, ny] = [-dy, dx];
+  return Array.from({ length: n }, (_, i) => {
+    const t = i / (n - 1);
+    const s = Math.sin(Math.PI * t) * bend;
+    return [a[0] + dx * t + nx * s, a[1] + dy * t + ny * s] as Pt;
+  });
+}
+function arrow(a: Pt, b: Pt, bend: number, seed: number): string {
+  const pts = curve(a, b, bend);
+  const [px, py] = pts[pts.length - 2]!;
+  const ang = Math.atan2(b[1] - py, b[0] - px);
+  const head = (da: number) => [b, [b[0] - 18 * Math.cos(ang + da), b[1] - 18 * Math.sin(ang + da)] as Pt];
+  const line = (d: string, w = 3) => `<path d="${d}" fill="none" stroke="${INK}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"/>`;
+  return line(wobble(pts, seed)) + line(wobble(head(0.45), seed + 1, 1)) + line(wobble(head(-0.45), seed + 2, 1));
+}
+/** A sketched rectangle: four slightly wobbly strokes that overshoot at the corners. */
+function inkFrame(x: number, y: number, w: number, h: number, seed: number): string {
+  const o = 7; // gap between image and line
+  const e = 9; // overshoot past the corners
+  const [l, t, r, btm] = [x - o, y - o, x + w + o, y + h + o];
+  const sides: Pt[][] = [
+    [[l - e, t + 1], [(l + r) / 2, t - 1.5], [r + e, t]],
+    [[r, t - e], [r + 1.5, (t + btm) / 2], [r - 1, btm + e]],
+    [[r + e, btm], [(l + r) / 2, btm + 1.5], [l - e, btm - 1]],
+    [[l + 1, btm + e], [l - 1.5, (t + btm) / 2], [l, t - e]],
+  ];
+  return sides
+    .map((pts, i) => `<path d="${wobble(pts, seed + i, 2)}" fill="none" stroke="${INK}" stroke-width="2.5" stroke-linecap="round"/>`)
+    .join("");
+}
+/** Five short marker strokes in the tab-group colours. */
+function scribbles(x: number, y: number, len: number, gap: number, width: number, seed: number): string {
+  return GROUP_COLORS.map((c, i) => {
+    const x0 = x + i * (len + gap);
+    const r = rng(seed + i);
+    const pts: Pt[] = [[x0, y + r() * 4], [x0 + len * 0.5, y - 2 + r() * 4], [x0 + len, y + r() * 4]];
+    return `<path d="${wobble(pts, seed + i, 2)}" fill="none" stroke="${c}" stroke-width="${width}" stroke-linecap="round" opacity="0.85"/>`;
+  }).join("");
+}
+const img = (f: string, x: number, y: number, w: number, h: number) =>
+  `<img src="${b64(f)}" style="position:absolute;left:${x}px;top:${y}px;width:${w}px;height:${h}px;object-fit:cover;object-position:top left">`;
+const text = (t: string, x: number, y: number, size: number, extra = "") =>
+  `<div style="position:absolute;left:${x}px;top:${y}px;font-size:${size}px;line-height:1.05;${extra}">${t}</div>`;
+
 const browser = await chromium.launch({ executablePath: chromiumPath() });
 const page = await browser.newPage();
-async function render(html: string, w: number, h: number, path: string) {
+async function render(w: number, h: number, body: string, svg: string, path: string) {
   await page.setViewportSize({ width: w, height: h });
-  await page.setContent(`<!doctype html><meta charset="utf-8"><style>
-    *{box-sizing:border-box} html,body{margin:0;width:${w}px;height:${h}px;overflow:hidden;font-family:${FONT};
-    background:radial-gradient(1200px 600px at 20% 0%,#2a2540 0%,#16151d 60%);color:#f1f0f7}
-    h1{font-size:40px;font-weight:750;letter-spacing:-.5px;margin:0} p{font-size:21px;color:#b9b6c8;margin:10px 0 0}
-    .shot{border-radius:14px;box-shadow:0 18px 50px rgba(0,0,0,.55);display:block}
-  </style>${html}`);
-  await page.waitForLoadState("load");
+  await page.setContent(`<!doctype html><meta charset="utf-8">
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&display=block" rel="stylesheet">
+    <style>html,body{margin:0;width:${w}px;height:${h}px;overflow:hidden;background:${PAPER};color:${INK};font-family:Caveat,cursive}
+    body{position:relative}</style>${body}
+    <svg width="${w}" height="${h}" style="position:absolute;inset:0">${svg}</svg>`);
+  await page.waitForLoadState("networkidle");
+  await page.evaluate(() => document.fonts.ready);
   await page.screenshot({ path });
 }
-const full = (title: string, sub: string, img: string) =>
-  `<div style="display:flex;flex-direction:column;height:800px">
-     <div style="padding:44px 50px 0"><h1>${title}</h1><p>${sub}</p></div>
-     <div style="flex:1;display:flex;align-items:center;justify-content:center"><img class="shot" src="${b64(img)}" style="width:1180px"></div></div>`;
 
-await render(full("Sorts your tabs into groups, only when it's sure", "Real Chrome tab groups, made by a calibrated classifier. One click, one window.", shots.sorted), 1280, 800, join(OUT, "screenshot-1.png"));
-await render(
-  `<div style="display:flex;gap:56px;padding:56px 64px;align-items:center;height:800px">
-     <div style="flex:1"><h1>Not sure? It leaves the tab alone.</h1>
-       <p>Every tab shows its probability. Tabs below your threshold stay exactly where they are, with the reason why.</p>
-       <p style="margin-top:22px">No account and no API key: install it, accept the one-screen consent, press Sort.</p></div>
-     <img class="shot" src="${b64(shots.popup)}" style="height:690px"></div>`,
-  1280, 800, join(OUT, "screenshot-2.png"),
-);
-await render(full("Before: tabs in no order", "tab-triage only looks at the tabs in the current window.", shots.messy), 1280, 800, join(OUT, "screenshot-3.png"));
-await render(full("Undo puts every tab back", "Order and groups, including the groups you made yourself, restored from a snapshot.", shots.undone), 1280, 800, join(OUT, "screenshot-4.png"));
-await render(
-  `<div style="display:flex;gap:48px;padding:52px 60px;height:800px">
-     <div style="width:400px;flex:none;padding-top:20px"><h1>You choose the groups. You see what's sent.</h1>
-       <p>Describe each group in plain words. The Options page shows the exact request: a hostname and a title, nothing else.</p></div>
-     <img class="shot" src="${b64(opt)}" style="width:557px;height:696px;object-fit:cover;object-position:top"></div>`,
-  1280, 800, join(OUT, "screenshot-5.png"),
-);
-await render(
-  `<div style="height:280px;display:flex;flex-direction:column;justify-content:center;padding:0 34px;gap:14px">
-     <div style="display:flex;gap:8px">${["#1a73e8", "#188038", "#fa903e", "#d93025", "#a142f4"].map((c) => `<div style="width:46px;height:10px;border-radius:5px;background:${c}"></div>`).join("")}</div>
-     <div style="font-size:46px;font-weight:800;letter-spacing:-1px">tab-triage</div>
-     <div style="font-size:19px;color:#c9c6d8;line-height:1.35">Sorts your tabs into groups,<br>only when it's sure. Undo anytime.</div></div>`,
-  440, 280, join(OUT, "promo-small.png"),
-);
-await render(
-  `<div style="display:flex;align-items:center;gap:64px;height:560px;padding:0 80px">
-     <div style="flex:1;display:flex;flex-direction:column;gap:20px">
-       <div style="display:flex;gap:10px">${["#1a73e8", "#188038", "#fa903e", "#d93025", "#a142f4"].map((c) => `<div style="width:64px;height:14px;border-radius:7px;background:${c}"></div>`).join("")}</div>
-       <div style="font-size:84px;font-weight:800;letter-spacing:-2px;line-height:1">tab-triage</div>
-       <div style="font-size:30px;color:#c9c6d8;line-height:1.35">Sorts your tabs into Chrome tab groups,<br>only when it's sure. Undo anytime.</div>
-     </div>
-     <img class="shot" src="${b64(shots.popup)}" style="height:470px"></div>`,
-  1400, 560, join(OUT, "promo-marquee.png"),
-);
+// Full-window frames are 1920×860; shown at 1100 wide (×0.573), top-left at (90, 236).
+const FW = 1100;
+const FH = Math.round((860 * FW) / 1920);
+const [FX, FY] = [90, 236];
+
+await render(1280, 800,
+  text("sorts your tabs into groups", 90, 48, 64, "font-weight:700") + text("…only the ones it's sure about", 110, 124, 40) +
+    text("and tells you about the rest", 860, 92, 34) + img(shots.sorted, FX, FY, FW, FH),
+  arrow([470, 180], [400, FY - 16], 0.25, 11) + arrow([1010, 136], [930, FY - 16], 0.12, 21) + inkFrame(FX, FY, FW, FH, 31),
+  join(OUT, "screenshot-1.png"));
+
+// The popup crop is 520×896; shown 640 tall.
+const PH = 640;
+const PW = Math.round((520 * PH) / 896);
+const [PX, PY] = [760, 80];
+await render(1280, 800,
+  text("not sure?", 90, 210, 72, "font-weight:700") + text("it leaves the tab alone,<br>and tells you why", 96, 300, 46) +
+    text("no account, no api key.<br>just press sort.", 96, 560, 34, "opacity:.8") + img(shots.popup, PX, PY, PW, PH),
+  arrow([560, 340], [PX - 14, PY + 190], -0.12, 41) + inkFrame(PX, PY, PW, PH, 51),
+  join(OUT, "screenshot-2.png"));
+
+await render(1280, 800,
+  text("before: thirty tabs, no order", 90, 60, 64, "font-weight:700") + img(shots.messy, FX, FY, FW, FH),
+  arrow([700, 112], [540, FY - 16], 0.22, 61) + inkFrame(FX, FY, FW, FH, 71),
+  join(OUT, "screenshot-3.png"));
+
+await render(1280, 800,
+  text("undo puts every tab back", 90, 48, 64, "font-weight:700") + text("even the groups you made yourself", 110, 124, 40) +
+    img(shots.undone, FX, FY, FW, FH),
+  arrow([520, 180], [450, FY - 16], 0.25, 81) + inkFrame(FX, FY, FW, FH, 91),
+  join(OUT, "screenshot-4.png"));
+
+// The Options crop is 800×1000; shown 640 tall.
+const OH = 640;
+const OW = Math.round((800 * OH) / 1000);
+const [OX, OY] = [660, 80];
+await render(1280, 800,
+  text("you write the groups.", 90, 230, 60, "font-weight:700") + text("and you can see exactly<br>what gets sent", 96, 310, 44) +
+    img(opt, OX, OY, OW, OH),
+  arrow([520, 400], [OX - 18, OY + 150], -0.15, 101) + inkFrame(OX, OY, OW, OH, 111),
+  join(OUT, "screenshot-5.png"));
+
+await render(440, 280,
+  text("tab-triage", 40, 62, 84, "font-weight:700") + text("sorts your tabs, only when it's sure", 44, 200, 30),
+  scribbles(46, 170, 50, 14, 9, 121),
+  join(OUT, "promo-small.png"));
+
+const MH = 470;
+const MW = Math.round((520 * MH) / 896);
+await render(1400, 560,
+  text("tab-triage", 100, 150, 130, "font-weight:700") + text("sorts your tabs into groups,<br>only when it's sure. undo anytime.", 106, 340, 44) +
+    img(shots.popup, 1400 - 120 - MW, 45, MW, MH),
+  scribbles(108, 305, 78, 18, 13, 131) + inkFrame(1400 - 120 - MW, 45, MW, MH, 141),
+  join(OUT, "promo-marquee.png"));
 await browser.close();
 
 // Store icon: the 128px icon's artwork at 96×96, centred on a transparent 128×128 canvas
