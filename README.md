@@ -4,7 +4,7 @@ A Chrome extension that sorts your open tabs into **native Chrome tab groups**, 
 
 ![tab-triage sorting 30 real tabs into Chrome tab groups, then undoing it](demo/demo.gif)
 
-*Real extension, real Chromium tab strip, real classifier (TypeSafe `jev-1.14.0`), recorded with `npm run demo`. On this run: 26 of 30 tabs grouped, 4 left alone, 2.3 s, $0.00073 for 29 API calls. One run on 30 public pages, not an accuracy result.*
+*Real extension, real Chromium tab strip, real toolbar dropdown, real classifier (TypeSafe `jev-1.14.0`), recorded with `npm run demo`. On this run: 26 of 30 tabs grouped, 4 left alone, 1.6 s, $0.00075 for 30 API calls (one was a reversed-order re-ask). One run on 30 public pages, not an accuracy result.*
 
 ## What it does
 

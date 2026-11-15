@@ -147,15 +147,15 @@ try {
     urls.map((u, i) => pages[i]!.goto(u, { waitUntil: "domcontentloaded", timeout: 25_000 }).catch(() => console.warn(`  (slow or failed: ${u})`))),
   );
   await sleep(2500);
-  // Bot-check interstitials make bad demo tabs; name them so urls.json can be fixed.
+  // Bot-check interstitials and dead pages make bad demo tabs; name them so urls.json can be fixed.
   const blocked: string[] = [];
   for (const [i, p] of pages.entries()) {
     const title = await p.title().catch(() => "");
-    if (/just a moment|attention required|verify you are human|access denied|are you a robot/i.test(title)) blocked.push(`${urls[i]} → "${title}"`);
+    if (/just a moment|attention required|verify you are human|access denied|are you a robot|not found|\b404\b/i.test(title)) blocked.push(`${urls[i]} → "${title}"`);
   }
   for (const b of blocked) console.warn(`  (bot check: ${b})`);
   // A rehearsal can live with them; the published video shouldn't show challenge pages.
-  if (blocked.length && !MOCK) throw new Error(`${blocked.length} page(s) served a bot check: replace them in demo/urls.json and re-run`);
+  if (blocked.length && !MOCK) throw new Error(`${blocked.length} page(s) served a bot check or a 404: replace them in demo/urls.json and re-run`);
   await sw.evaluate(async (wid) => {
     const tabs = await chrome.tabs.query({ windowId: wid });
     await chrome.tabs.update(tabs[0]!.id!, { active: true });

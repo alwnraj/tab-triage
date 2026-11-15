@@ -27,7 +27,7 @@
     { "url": "https://www.patagonia.com/shop/mens/jackets-vests", "expect": "shopping" },
     { "url": "https://en.wikipedia.org/wiki/Maillard_reaction", "expect": "research", "ambiguous": "food science: research or cooking?" },
     { "url": "https://news.ycombinator.com/", "expect": "news", "ambiguous": "tech news aggregator: news or code?" },
-    { "url": "https://www.nytimes.com/wirecutter/reviews/best-electric-kettle/", "expect": "shopping", "ambiguous": "product review journalism: shopping or news?" },
+    { "url": "https://www.rtings.com/tv/reviews/best/tvs-on-the-market", "expect": "shopping", "ambiguous": "product review journalism: shopping or news?" },
     { "url": "https://en.wikibooks.org/wiki/Cookbook:Table_of_Contents", "expect": "cooking", "ambiguous": "a wiki about cooking: research or cooking?" },
     { "url": "https://www.timeanddate.com/worldclock/", "expect": "none", "ambiguous": "fits no group" },
     { "url": "https://www.weather.gov/", "expect": "none", "ambiguous": "fits no group" }
