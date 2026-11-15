@@ -73,18 +73,30 @@ export async function handle(request: Request, env: Env, deps: Deps): Promise<Re
   };
 
   // Health check: whether the key and the limits are configured (never their values).
-  if (request.method === "GET")
+  if (request.method === "GET") {
+    // Ask Redis for today's count, so "limits" means reachable, not just configured.
+    let reachable: boolean | null = null;
+    if (deps.limiter) {
+      try {
+        await deps.limiter.tokensToday(new Date(deps.now()).toISOString().slice(0, 10));
+        reachable = true;
+      } catch {
+        reachable = false;
+      }
+    }
     return done(
       json(200, {
         ok: true,
         configured: !!env.TYPESAFE_API_KEY?.trim(),
         limits: !!deps.limiter,
+        limitsReachable: reachable,
         model: MODEL_ID,
         // Names only (never values), so a misnamed Redis integration is easy to spot.
         ...(deps.limiter ? {} : { redisVariables: Object.keys(env).filter((k) => /REDIS|^KV_|UPSTASH|_REST(_API)?_(URL|TOKEN)$/.test(k)).sort() }),
       }),
       "health",
     );
+  }
   if (request.method !== "POST") return done(json(405, { error: "method" }, { allow: "GET, POST" }), "method");
   if (!originAllowed(request.headers.get("origin"), env)) return done(json(403, { error: "origin" }), "origin");
   const key = env.TYPESAFE_API_KEY?.trim();

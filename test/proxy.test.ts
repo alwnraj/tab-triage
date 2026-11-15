@@ -73,7 +73,7 @@ describe("hosted service (proxy/handler.ts)", () => {
 
   it("refuses other methods, web-page origins and origins off the allow-list", async () => {
     const health = await setup().call(BODY, {}, "GET");
-    expect(await health.json()).toEqual({ ok: true, configured: true, limits: true, model: "jev-1.14.0" });
+    expect(await health.json()).toEqual({ ok: true, configured: true, limits: true, limitsReachable: true, model: "jev-1.14.0" });
     const bare = await setup(undefined, { TYPESAFE_API_KEY: KEY, KV_URL: "redis://secret" } as Env, null as never).call(BODY, {}, "GET");
     const h = await bare.text();
     expect(JSON.parse(h)).toMatchObject({ limits: false, redisVariables: ["KV_URL"] });
