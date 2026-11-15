@@ -57,6 +57,26 @@ try {
   console.error("ffmpeg not found on PATH.");
   process.exit(1);
 }
+// Without Screen Recording permission, avfoundation opens but never delivers a frame and
+// ffmpeg ignores SIGTERM, so probe it with a hard SIGKILL deadline before doing anything else.
+if (RECORD && mac) {
+  const probe = join(OUT, "capture-probe.mkv");
+  rmSync(probe, { force: true });
+  const ok = await new Promise<boolean>((resolve) => {
+    const p = spawn("ffmpeg", ["-hide_banner", "-loglevel", "error", "-y", "-f", "avfoundation", "-framerate", "30", "-i", "Capture screen 0:none", "-t", "1", "-c:v", "libx264", "-preset", "ultrafast", probe], { stdio: "ignore" });
+    const timer = setTimeout(() => (p.kill("SIGKILL"), resolve(false)), 10_000);
+    p.on("exit", (code) => (clearTimeout(timer), resolve(code === 0)));
+  });
+  rmSync(probe, { force: true });
+  if (!ok) {
+    console.error(
+      "Screen capture produced no frames within 10 s. macOS is most likely blocking it:\n" +
+        "System Settings → Privacy & Security → Screen & System Audio Recording → allow the app that runs this\n" +
+        "command (your terminal, or Claude), then quit and reopen that app and try again.",
+    );
+    process.exit(1);
+  }
+}
 const urls = (JSON.parse(readFileSync("demo/urls.json", "utf8")) as { tabs: Array<{ url: string }> }).tabs.map((t) => t.url);
 console.log(`[demo] building extension…`);
 run("node", ["scripts/build.mjs"]);
