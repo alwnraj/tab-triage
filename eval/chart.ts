@@ -8,8 +8,8 @@ const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&l
  */
 export function chartSvg(points: ThresholdPoint[], choiceBins: Bin[], noulBins: Bin[], title: string, banner: string | null): string {
   const W = 960;
-  const H = 440;
-  const pad = { l: 56, r: 20, t: banner ? 78 : 56, b: 56 };
+  const H = 470;
+  const pad = { l: 56, r: 20, t: banner ? 78 : 56, b: 80 };
   const pw = (W - pad.l * 2 - pad.r * 2 - 40) / 2;
   const ph = H - pad.t - pad.b;
   const ax = (x0: number, label: string, xlab: string, ylab: string, xmin: number, xmax: number, ticks: number[]) => {
@@ -52,7 +52,7 @@ export function chartSvg(points: ThresholdPoint[], choiceBins: Bin[], noulBins: 
 
   const legend = (x: number, items: Array<[string, string, string?]>) =>
     items
-      .map(([c, t, dash], i) => `<line x1="${x}" x2="${x + 18}" y1="${H - 12}" y2="${H - 12}" stroke="${c}" stroke-width="3" ${dash ? `stroke-dasharray="${dash}"` : ""} transform="translate(${i * 150} 0)"/><text x="${x + 24 + i * 150}" y="${H - 8}" font-size="11" fill="#1b1d22">${esc(t)}</text>`)
+      .map(([c, t, dash], i) => `<line x1="${x}" x2="${x + 18}" y1="${H - 24}" y2="${H - 24}" stroke="${c}" stroke-width="3" ${dash ? `stroke-dasharray="${dash}"` : ""} transform="translate(${i * 150} 0)"/><text x="${x + 24 + i * 150}" y="${H - 20}" font-size="11" fill="#1b1d22">${esc(t)}</text>`)
       .join("");
 
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" font-family="Helvetica, Arial, sans-serif">

@@ -144,7 +144,7 @@ try {
   }
   t0 = Date.now();
   mark("messy");
-  await sleep(4000);
+  await sleep(5000);
 
   const popupPromise = ctx.waitForEvent("page", { timeout: 15_000 });
   await sw.evaluate(
@@ -174,7 +174,7 @@ try {
     (hs.find((h) => h.textContent?.startsWith("Left alone")) ?? hs[0])?.scrollIntoView({ behavior: "smooth", block: "start" });
   });
   mark("leftAlone");
-  await sleep(5000);
+  await sleep(6000);
 
   await sw.evaluate(async (wid) => {
     for (const g of await chrome.tabGroups.query({ windowId: wid })) await chrome.tabGroups.update(g.id, { collapsed: true });
@@ -185,7 +185,7 @@ try {
   await popup.click("#undo");
   await popup.waitForFunction(() => (document.getElementById("message")?.textContent ?? "").includes("Undone"), null, { timeout: 20_000 });
   mark("undone");
-  await sleep(3500);
+  await sleep(4500);
   mark("end");
 
   if (recorder) {

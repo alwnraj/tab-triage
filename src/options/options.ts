@@ -78,7 +78,7 @@ function renderConsent() {
 
 async function renderKeyStatus() {
   const k = await loadApiKey(kv);
-  $("key-status").textContent = k ? `A key is saved (ending …${k.slice(-4)}).` : "No key saved.";
+  $("key-status").textContent = k ? "A key is saved. (It is never displayed.)" : "No key saved.";
 }
 
 async function exportTabs() {
