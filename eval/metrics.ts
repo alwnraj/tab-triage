@@ -105,3 +105,13 @@ export function orderStats(rows: readonly EvalRow[], groups: readonly ModelGroup
   }
   return { pairs: both, identicalRate: both ? identical / both : null, choiceFlipRate: both ? choiceFlips / both : null };
 }
+
+/**
+ * Synthetic data is detected from the data itself, not only the --synthetic flag, so
+ * `--data eval/synthetic.dev.json` (or a copy of it) can never produce an unstamped,
+ * committable "labeled" result.
+ */
+export function isSyntheticData(path: string, data: unknown, flag: boolean): boolean {
+  if (flag || /synthetic/i.test(path)) return true;
+  return typeof data === "object" && data !== null && ("_WARNING" in data || "_synthetic" in data);
+}

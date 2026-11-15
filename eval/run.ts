@@ -17,7 +17,7 @@ import { MockClassifier } from "../src/providers/mock.js";
 import { TypeSafeClassifier } from "../src/providers/typesafe.js";
 import { DEFAULT_GROUPS } from "../src/settings.js";
 import { chartSvg } from "./chart.js";
-import { calibrationPairs, type EvalRow, orderStats, reliability, sweep } from "./metrics.js";
+import { calibrationPairs, type EvalRow, isSyntheticData, orderStats, reliability, sweep } from "./metrics.js";
 
 const { values: args } = parseArgs({
   options: {
@@ -29,8 +29,7 @@ const { values: args } = parseArgs({
   },
 });
 
-const synthetic = args.synthetic === true;
-const dataPath = args.data ?? (synthetic ? "eval/synthetic.dev.json" : "eval/labeled.json");
+const dataPath = args.data ?? (args.synthetic ? "eval/synthetic.dev.json" : "eval/labeled.json");
 const maxCalls = Number(args["max-calls"]);
 const THRESHOLDS = [0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95];
 
@@ -46,6 +45,8 @@ try {
   console.error(`Can't read ${dataPath}. Run \`npm run eval:label\` first (or pass --synthetic for the dev set).`);
   process.exit(1);
 }
+const synthetic = isSyntheticData(dataPath, data, args.synthetic === true);
+if (synthetic && args.synthetic !== true) console.warn(`[${dataPath} is synthetic dev data: results will be stamped and named synthetic*]`);
 const groups: GroupDef[] = args.groups
   ? JSON.parse(readFileSync(args.groups, "utf8"))
   : Array.isArray(data.groups)
@@ -108,6 +109,7 @@ const banner = synthetic
     ? "MOCK CLASSIFIER — NOT A REAL RESULT"
     : null;
 
+if (!mock) console.log(`Sending ${modelRows.length} rows (hostname + title) to api.typesafe.ai, twice each (both option orders).`);
 console.log(`${banner ? `[${banner}] ` : ""}${rows.length} labelled tabs (${modelRows.length} via model, ${rows.length - modelRows.length} via domain table), classifier ${classifier.id}`);
 
 let inputTokens = 0;

@@ -1,5 +1,5 @@
 /**
- * npm run eval:label [-- --from path/to/tabs-export.json] [--browser "Google Chrome"]
+ * npm run eval:label [-- --from path/to/tabs-export.json] [--browser "Google Chrome"] [--exclude bank.com,mail.example.com]
  *
  * Writes eval/labeled.json: one row per open tab with hostname, a 120-char title and
  * `"label": null` for you to fill in with a group id or "none".
@@ -10,16 +10,21 @@
  *    AppleScript (read-only; macOS will ask you to allow Terminal to control it). It never
  *    opens or reads the browser profile on disk.
  *
+ * The AppleScript path can't see the extension's blocklist or which tabs are pinned, so pass
+ * the domains you never want sent with --exclude, and review the file before running the eval:
+ * every labelled row is sent to the API.
+ *
  * Only hostname + title leave this script; URLs are reduced immediately and never written.
  * eval/labeled.json is gitignored because it holds your real titles.
  */
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { parseArgs } from "node:util";
-import { isLocalHost, safeTitle, truncateTitle, webHostname } from "../src/core/privacy.js";
+import { hostMatches, isLocalHost, normalizeDomain, safeTitle, truncateTitle, webHostname } from "../src/core/privacy.js";
 import { DEFAULT_GROUPS } from "../src/settings.js";
 
-const { values: args } = parseArgs({ options: { from: { type: "string" }, browser: { type: "string", default: "Google Chrome" }, force: { type: "boolean", default: false } } });
+const { values: args } = parseArgs({ options: { from: { type: "string" }, browser: { type: "string", default: "Google Chrome" }, force: { type: "boolean", default: false }, exclude: { type: "string", default: "" } } });
+const exclude = args.exclude!.split(/[,\s]+/).map(normalizeDomain).filter(Boolean);
 const OUT = "eval/labeled.json";
 
 if (existsSync(OUT) && !args.force) {
@@ -63,7 +68,7 @@ const seen = new Set<string>();
 const tabs: Array<{ site: string; title: string; label: null }> = [];
 for (const r of raw) {
   const site = r.site ?? webHostname(r.url);
-  if (!site || isLocalHost(site)) continue;
+  if (!site || isLocalHost(site) || exclude.some((d) => hostMatches(site, d))) continue;
   const title = safeTitle(truncateTitle(r.title), site);
   const k = site + "\n" + title;
   if (seen.has(k)) continue;
@@ -83,4 +88,6 @@ writeFileSync(
     1,
   ) + "\n",
 );
-console.log(`Wrote ${tabs.length} tabs to ${OUT} (hostname + title only). Fill in the labels, then run \`npm run eval\`.`);
+console.log(`Wrote ${tabs.length} tabs to ${OUT} (hostname + title only${exclude.length ? `, excluding ${exclude.join(", ")}` : ""}).`);
+console.log("Review it before labelling: delete any private row (bank, mail, anything with personal text in the title).");
+console.log("Every labelled row is sent to api.typesafe.ai by `npm run eval`. Pinned tabs are not detected on this path.");
