@@ -207,7 +207,7 @@ describe("runSort", () => {
 });
 
 describe("undo edge cases", () => {
-  it("keeps a pre-existing group intact when new groups form around it (review #2 repro)", async () => {
+  it("keeps a pre-existing group intact when new groups form around it", async () => {
     // [L1, G1, G2, L2] with G pre-existing; sort L1 and L2 into a new group; Undo.
     const b = new FakeBrowser(W, [
       { url: "https://food.example.org/1", title: "Pasta recipe" },

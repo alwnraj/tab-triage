@@ -100,7 +100,7 @@ try {
   );
   assert.equal(undone.groups.length, 0);
 
-  // Review #2 repro in real Chrome: a pre-existing user group in the MIDDLE of loose tabs
+  // A pre-existing user group in the MIDDLE of loose tabs
   // ([L, G1, G2, L, ...]); sorting forms new groups around it; Undo must restore it exactly.
   await sw.evaluate(async (wid) => {
     const tabs = (await chrome.tabs.query({ windowId: wid })).filter((t) => t.url?.startsWith("http"));

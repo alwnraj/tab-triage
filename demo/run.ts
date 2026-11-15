@@ -8,14 +8,12 @@
  *
  * --mock  rehearsal with the keyword MockClassifier. Outputs go to demo/out/rehearsal-*
  *         and are captioned MOCK; demo/demo.gif and demo/poster.png are NOT touched.
- * Without --mock the real classifier is used (needs TYPESAFE_API_KEY).
+ * Without --mock the real classifier is used, through the hosted service.
  *
- * Capture: macOS → avfoundation (needs Screen Recording permission for your terminal);
+ * Capture: macOS → avfoundation (needs Screen Recording permission);
  *          Linux → x11grab (run under `xvfb-run -s "-screen 0 1920x1080x24"`).
- * The popup is Chrome's real toolbar dropdown (chrome.action.openPopup). Playwright can't
- * click inside it, so the sort and undo are started through the worker and the open popup
- * updates itself live, as it would for a user. (Synthetic toolbar clicks would need xdotool
- * and aren't reliable, so we don't fake them.)
+ * Playwright can't click inside the toolbar popup, so sort and undo are started through
+ * the worker; the open popup updates itself from session state.
  */
 import { type ChildProcess, execFileSync, spawn } from "node:child_process";
 import { mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";

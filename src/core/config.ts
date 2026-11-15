@@ -1,22 +1,11 @@
-/**
- * Tunables in one place.
- *
- * PRICE_USD_PER_INPUT_TOKEN: verified on https://docs.typesafe.ai/models on 2026-11-15:
- * Jev 1.14 costs $0.042 per million input tokens ($42 per billion); output tokens are free.
- * If the price changes, change it here only.
- */
+/** Tunables in one place. Price from https://docs.typesafe.ai/models (2026-11-15); output tokens are free. */
 export const PRICE_USD_PER_INPUT_TOKEN = 0.042 / 1_000_000;
 
 /** Pinned rather than "jev-latest": aliases move, and thresholds are tuned per model version. */
 export const MODEL_ID = "jev-1.14.0";
 export const API_BASE = "https://api.typesafe.ai";
 
-/**
- * The hosted tab-triage service (proxy/), which holds the TypeSafe key so users
- * don't need one. Overridable at build time (TAB_TRIAGE_SERVICE=… npm run build)
- * for a staging or local server; scripts/build.mjs also writes it into the
- * manifest's host_permissions.
- */
+/** The hosted service (proxy/). Set at build time with TAB_TRIAGE_SERVICE; also becomes the manifest's host permission. */
 declare const __SERVICE_URL__: string | undefined;
 export const SERVICE_URL: string = typeof __SERVICE_URL__ === "string" ? __SERVICE_URL__ : "https://tab-triage-pi.vercel.app";
 

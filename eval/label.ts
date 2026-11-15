@@ -4,18 +4,10 @@
  * Writes eval/labeled.json: one row per open tab with hostname, a 120-char title and
  * `"label": null` for you to fill in with a group id or "none".
  *
- * Sources:
- *  - --from: the file from Options → "Export open tabs for labelling" (works everywhere).
- *  - default on macOS: reads the open tabs of a running Chromium-family browser via
- *    AppleScript (read-only; macOS will ask you to allow Terminal to control it). It never
- *    opens or reads the browser profile on disk.
- *
- * The AppleScript path can't see the extension's blocklist or which tabs are pinned, so pass
- * the domains you never want sent with --exclude, and review the file before running the eval:
- * every labelled row is sent to the API.
- *
- * Only hostname + title leave this script; URLs are reduced immediately and never written.
- * eval/labeled.json is gitignored because it holds your real titles.
+ * Source: --from <Options → "Export open tabs for labelling">, or on macOS the open tabs
+ * of a running Chrome via AppleScript (read-only). The AppleScript path can't see the
+ * blocklist or pinned tabs, so use --exclude and review the file: every labelled row is
+ * sent to the API. Only hostname + title are written; the file is gitignored.
  */
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";

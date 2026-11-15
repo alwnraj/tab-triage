@@ -1,4 +1,4 @@
-/** Cut, caption and encode the raw screen capture. Separate from run.ts so it can be tested on a synthetic clip. */
+/** Cut, caption and encode the raw screen capture. */
 import { execFileSync } from "node:child_process";
 import { existsSync, mkdirSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { join } from "node:path";

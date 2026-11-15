@@ -9,6 +9,5 @@ eval/out/
 *.log
 .DS_Store
 eval/results/*mock*
-eval/results/synthetic*
 .vercel/
 release/

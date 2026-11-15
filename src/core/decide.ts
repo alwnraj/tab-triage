@@ -13,7 +13,7 @@ export function topOf(answer: RawAnswer, groups: readonly ModelGroup[]): { key: 
 }
 
 /**
- * The decision rule (see docs/DESIGN.md §5).
+ * The decision rule.
  *   1. noul < t or p < t        -> ungrouped
  *   2. p >= t + band            -> grouped
  *   3. t <= p < t + band        -> grouped only if the reversed-order answer picks the same key

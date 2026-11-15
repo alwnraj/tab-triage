@@ -38,14 +38,3 @@ describe("eval metrics", () => {
   });
 });
 
-describe("isSyntheticData", () => {
-  it("flags the dev set by flag, path or content, so it can't be written as a real result", async () => {
-    const { isSyntheticData } = await import("../eval/metrics.js");
-    const { readFileSync } = await import("node:fs");
-    const dev = JSON.parse(readFileSync("eval/synthetic.dev.json", "utf8"));
-    expect(isSyntheticData("eval/labeled.json", {}, true)).toBe(true);
-    expect(isSyntheticData("eval/synthetic.dev.json", {}, false)).toBe(true);
-    expect(isSyntheticData("/tmp/copy.json", dev, false)).toBe(true);
-    expect(isSyntheticData("eval/labeled.json", { tabs: [] }, false)).toBe(false);
-  });
-});

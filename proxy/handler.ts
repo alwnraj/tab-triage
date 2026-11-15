@@ -1,15 +1,7 @@
 /**
- * POST /api/classify: the hosted tab-triage service.
- *
- * It holds the TypeSafe key so users don't need one, and it only does one thing:
- * classify one tab ({site, title, groups, order}) with the same questions the
- * extension used to send itself. It builds those questions here, so it can't be
- * used as a general-purpose TypeSafe proxy.
- *
- * Abuse limits: request shape and size, optional origin allow-list, per-install and
- * per-IP rate limits, and a daily input-token cap (the last three need Redis; see
- * proxy/README.md). Privacy: titles and hostnames are never logged or stored; rate
- * limit keys are salted hashes that expire within minutes.
+ * POST /api/classify: classifies one tab ({site, title, groups, order}) with the
+ * server's TypeSafe key. It builds the questions itself, so it can't be used as a
+ * general TypeSafe proxy. Limits and setup: proxy/README.md.
  */
 import { MODEL_ID, PRICE_USD_PER_INPUT_TOKEN } from "../src/core/config.js";
 import { ClassifierError } from "../src/providers/classifier.js";

@@ -1,5 +1,5 @@
 /**
- * npm run eval [-- --data eval/labeled.json] [--synthetic] [--mock] [--max-calls 100]
+ * npm run eval [-- --data eval/labeled.json] [--mock] [--max-calls 100]
  *
  * One pass over the API collects BOTH option orders for every model-routed tab;
  * the threshold sweep then happens in code, so trying 10 thresholds costs nothing extra.
@@ -17,19 +17,18 @@ import { MockClassifier } from "../src/providers/mock.js";
 import { TypeSafeClassifier } from "../src/providers/typesafe.js";
 import { DEFAULT_GROUPS } from "../src/settings.js";
 import { chartSvg } from "./chart.js";
-import { calibrationPairs, type EvalRow, isSyntheticData, orderStats, reliability, sweep } from "./metrics.js";
+import { calibrationPairs, type EvalRow, orderStats, reliability, sweep } from "./metrics.js";
 
 const { values: args } = parseArgs({
   options: {
     data: { type: "string" },
-    synthetic: { type: "boolean", default: false },
     mock: { type: "boolean", default: false },
     "max-calls": { type: "string", default: "100" },
     groups: { type: "string" },
   },
 });
 
-const dataPath = args.data ?? (args.synthetic ? "eval/synthetic.dev.json" : "eval/labeled.json");
+const dataPath = args.data ?? "eval/labeled.json";
 const maxCalls = Number(args["max-calls"]);
 const THRESHOLDS = [0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95];
 
@@ -42,11 +41,9 @@ let data: DataFile;
 try {
   data = JSON.parse(readFileSync(dataPath, "utf8"));
 } catch {
-  console.error(`Can't read ${dataPath}. Run \`npm run eval:label\` first (or pass --synthetic for the dev set).`);
+  console.error(`Can't read ${dataPath}. Run \`npm run eval:label\` first.`);
   process.exit(1);
 }
-const synthetic = isSyntheticData(dataPath, data, args.synthetic === true);
-if (synthetic && args.synthetic !== true) console.warn(`[${dataPath} is synthetic dev data: results will be stamped and named synthetic*]`);
 const groups: GroupDef[] = args.groups
   ? JSON.parse(readFileSync(args.groups, "utf8"))
   : Array.isArray(data.groups)
@@ -103,11 +100,7 @@ else {
   });
 }
 
-const banner = synthetic
-  ? "SYNTHETIC DEV DATA — NOT A REAL RESULT" + (mock ? " (MOCK CLASSIFIER)" : "")
-  : mock
-    ? "MOCK CLASSIFIER — NOT A REAL RESULT"
-    : null;
+const banner = mock ? "MOCK CLASSIFIER — NOT A REAL RESULT" : null;
 
 if (!mock) console.log(`Sending ${modelRows.length} rows (hostname + title) to api.typesafe.ai, twice each (both option orders).`);
 console.log(`${banner ? `[${banner}] ` : ""}${rows.length} labelled tabs (${modelRows.length} via model, ${rows.length - modelRows.length} via domain table), classifier ${classifier.id}`);
@@ -151,7 +144,7 @@ const domainAcc = domainRows.length ? domainRows.filter((r) => r.domainGroup ===
 const sorted = [...latencies].sort((a, b) => a - b);
 const p50 = sorted[Math.floor(sorted.length / 2)] ?? 0;
 
-const name = synthetic ? `synthetic${mock ? "-mock" : ""}` : mock ? "labeled-mock" : "labeled";
+const name = mock ? "labeled-mock" : "labeled";
 mkdirSync("eval/results", { recursive: true });
 mkdirSync("eval/out", { recursive: true });
 

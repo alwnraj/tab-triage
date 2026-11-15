@@ -1,119 +1,72 @@
 # tab-triage
 
-A Chrome extension that sorts your open tabs into **native Chrome tab groups**, but only when a calibrated classifier is confident. Tabs it isn't sure about stay where they are, with their probability shown. **Undo** puts everything back.
+A Chrome extension that sorts the tabs in the current window into Chrome tab groups. It only moves a tab when the classifier is confident; the rest stay where they are. **Undo** puts everything back.
 
-![tab-triage sorting 30 real tabs into Chrome tab groups, then undoing it](demo/demo.gif)
+![tab-triage sorting tabs into groups, then undoing it](demo/demo.gif)
 
-*Real extension, real Chromium tab strip, real toolbar dropdown, real classifier (TypeSafe `jev-1.14.0`), recorded with `npm run demo`. On this run: 25 of 30 tabs grouped, 5 left alone, 3.5 s, $0.00073 for 29 API calls. One run on 30 public pages, not an accuracy result.*
+**Install:** [tab-triage-pi.vercel.app/install](https://tab-triage-pi.vercel.app/install). No account or API key needed.
 
-## What it does
+## How it works
 
-1. **Toolbar popup.** Kept deliberately small: **Sort tabs**, **Undo**, and a settings button. Sort asks the classifier about the tabs in the current window and moves the confident ones into colored, named groups. The results list shows the tabs it left alone first, each with its probability and why, then the grouped ones. The popup updates live while a sort runs.
-2. **Options page.** Here you set the **confidence threshold** (default 0.80) and define your groups (name, color, a plain-language description that serves as the classification criterion, and an optional domain list). You also set a domain blocklist, and there's a plain **"what gets sent"** panel. A **"Last sort"** line shows the measured latency and the estimated cost of the most recent run, worked out from the input tokens the API reports.
-3. **Undo** restores each tab's original position and group, including groups you had made yourself before sorting.
+1. Skip tabs that are pinned, already grouped, incognito, `chrome://`, local, or on the user's blocklist.
+2. Match the user's domain rules locally (e.g. `arxiv.org` → Research). No network call.
+3. For the rest, send one request per tab with two questions: a **Choice** (which group?) and a **Noul** (does any group fit at all?).
+4. Group the tab only if both probabilities are at least the threshold (default 0.8). If it's within 0.1 of the threshold, ask again with the options reversed and group it only if the answer doesn't change. This guards against the model favouring the first option.
+5. Classify every tab first, then move them. If anything fails, no tab moves. Undo restores the saved snapshot.
 
-## Install
+Only the hostname and the first 120 characters of the title leave the browser. They go to a small hosted service (`proxy/`), which holds the [TypeSafe](https://docs.typesafe.ai) API key and forwards the request. Nothing is logged or stored there. See the [privacy policy](https://tab-triage-pi.vercel.app/privacy).
 
-**For anyone:** go to [tab-triage-pi.vercel.app/install](https://tab-triage-pi.vercel.app/install), download the zip and follow the four steps (unzip, open `chrome://extensions`, turn on Developer mode, Load unpacked). Chrome only allows automatic installs from the Web Store; a store listing is in review.
+## Project layout
 
-**From source:**
+```
+src/core/        pure logic: privacy filter, decision rule, cache, pipeline, snapshot/undo
+src/providers/   classifiers: hosted service (default), direct TypeSafe, mock
+src/browser/     the only code that calls chrome.tabs / chrome.tabGroups
+src/popup/, src/options/, src/background.ts
+proxy/           the hosted service (Vercel Edge Function), see proxy/README.md
+site/            landing, install and privacy pages served by the same Vercel project
+test/            Vitest unit tests; test/e2e is a real-Chromium smoke test
+eval/            label your own tabs and measure accuracy and calibration
+demo/            records demo/demo.gif from a real screen capture
+store/           Chrome Web Store listing text and images
+```
+
+## Development
 
 ```bash
 npm ci
 ```
 
 ```bash
-npm run build
+npm run build      # dist/ → chrome://extensions → Developer mode → Load unpacked
+npm test           # unit tests
+npm run test:e2e   # real Chromium, mock classifier, no network
+npm run typecheck
 ```
 
-Then open `chrome://extensions`, turn on **Developer mode**, click **Load unpacked** and select the `dist/` folder. The first time it runs, the Options page opens a consent screen, and sorting stays off until you accept it. No account or API key is needed: the extension calls the hosted tab-triage service, which holds the [TypeSafe](https://docs.typesafe.ai) key (see [Hosted service](#hosted-service)).
+Options → Mock mode switches to a keyword matcher, so no API calls are made (dev builds only).
 
-## How a tab gets sorted (the funnel)
+To point the extension at a local or staging service, build with `TAB_TRIAGE_SERVICE=http://localhost:8787 npm run build`. Running the service locally is covered in [proxy/README.md](proxy/README.md).
 
-```
-all tabs in this window
- └─ skip: pinned · already in a group · chrome:// / extension / file pages · localhost / IPs / intranet · your blocklist · incognito
-     └─ domain table: host matches a domain you mapped → grouped locally (no API call)
-         └─ ONE request: Choice over your groups + companion Noul ("does any group fit?")
-             ├─ Noul < t or top probability < t ............ leave it alone
-             ├─ top probability ≥ t + 0.1 .................. group it
-             └─ t ≤ top probability < t + 0.1 ............. re-ask with options reversed;
-                                                              group only if both answers agree
-```
+## Scripts that call TypeSafe directly
 
-- **Companion Noul.** A Choice always picks *something*, even for a tab that fits none of your groups. The Noul is a separate yes/no question in the same request ("does this tab clearly belong in one of these groups?"), and the tab is grouped only when **both** pass the threshold. ([TypeSafe docs: Companion Noul](https://docs.typesafe.ai/patterns/companion-noul.md))
-- **Order bias.** TypeSafe's docs say Jev can lean toward the first option listed. Near the threshold, the same question is asked again with the options reversed, and the tab is grouped only if the answer doesn't change. ([Model jaggedness §8](https://docs.typesafe.ai/model-jaggedness.md))
-- **All or nothing.** Every tab is classified *before* anything moves. If the API fails (timeout after 5 s, 2 retries with backoff, 429/529 rate limiting, auth), **no tab moves** and the popup says why. A tab whose own request is rejected stays put while the others are sorted. If Chrome refuses a move halfway through, the run is rolled back.
-- **Pinned model.** The model is pinned to `jev-1.14.0` instead of `jev-latest`, because thresholds are tuned per model version.
+These read `TYPESAFE_API_KEY` from the environment or a gitignored `.env`.
 
-More detail in [docs/DESIGN.md](docs/DESIGN.md). The build history and the reasoning behind each decision are in [docs/DEVLOG.md](docs/DEVLOG.md).
-
-## Privacy
-
-| | |
+| Command | What it does |
 | - | - |
-| **Sent per tab** | the hostname only (no path, query or fragment) and the title cut to 120 characters. A title that is really a URL (untitled or loading tabs) is sent as an empty string. |
-| **Sent with each request** | your group keys and descriptions. Colors and domain lists stay local. |
-| **Never sent** | full URLs, page content, cookies, history; pinned tabs; incognito windows; `chrome://`, extension and file pages; localhost, IP addresses and intranet names; blocklisted domains; tabs matched by your domain rules. |
-| **Stored locally** | answers cached for 7 days under a SHA-256 key of (hostname, title, groups hash, model, prompt version, order). The cached value holds only probabilities, no hostname or title. Plus a random install id, sent only for rate limiting. |
-| **Who receives it** | the tab-triage service (`proxy/`, on Vercel), which forwards hostname, title and group descriptions to TypeSafe and logs or stores none of them. [Privacy policy](site/privacy.html). |
-| **Permissions** | `tabs`, `tabGroups`, `storage`, and the service's host. Nothing else. A strict extension CSP. |
+| `npm run probe` | 13 requests on public pages, to check the API end to end |
+| `npm run eval:label` | writes `eval/labeled.json` from your open tabs, for you to label |
+| `npm run eval` | accuracy and coverage per threshold, plus reliability bins (`eval/results/`). Refuses to run over `--max-calls`, default 100 |
+| `npm run demo` | records the demo GIF (macOS needs Screen Recording permission) |
 
-TypeSafe is a third party. See its [legal and data-handling pages](https://docs.typesafe.ai/legal.md).
+## Releasing
 
-## Cost
+`npm run package` writes two zips to `release/`:
 
-TypeSafe charges per input token; output tokens are free. The price is one constant, `PRICE_USD_PER_INPUT_TOKEN` in [`src/core/config.ts`](src/core/config.ts), currently **$0.042 per million input tokens**, checked against [docs.typesafe.ai/models](https://docs.typesafe.ai/models.md) on 2026-11-15. The popup multiplies it by the `usage.input_tokens` the API actually reports. Cache hits cost nothing.
+- `tab-triage-<version>.zip` for the Chrome Web Store. Listing text is in `store/listing.md`.
+- `-download.zip` for the website install. It carries a manifest `key` that fixes the extension id; never upload it to the store.
 
-## Evaluation
-
-> **Results: pending real labels.** No accuracy numbers are reported yet. `eval/synthetic.dev.json` holds hand-written examples for building the pipeline only, and anything produced from it is stamped *SYNTHETIC: NOT A REAL RESULT* and gitignored. (One early commit included a stamped synthetic mock run; the next commit removed it.) The eval detects the synthetic set from its contents, not only from a flag.
-
-1. `npm run eval:label` writes `eval/labeled.json` from your open tabs (hostname and title only). On macOS it reads them from Chrome through AppleScript. Anywhere else, use Options → *Export open tabs for labelling* with `--from <file>`. Then fill in each `label` with a group id or `"none"`. The file is gitignored.
-2. `npm run eval` makes one API pass, collecting both option orders per tab. It refuses to start if it would need more than `--max-calls` (default 100) requests. It then reports:
-   - **coverage and accuracy** at thresholds 0.50–0.95 (coverage = share of tabs grouped; accuracy = share of grouped tabs that went to the right group),
-   - **reliability bins** for the Choice probability and the Noul (is "0.9" right about 90% of the time?) plus ECE,
-   - how often reversing the option order changed the answer,
-   - tokens, estimated cost and median latency.
-   Outputs go to `eval/results/labeled.{csv,svg,json}`, and the SVG is self-contained.
-
-## Demo video
-
-`npm run demo` records the real extension in a headed Chromium with a **fresh temporary profile** (none of your tabs, bookmarks or accounts), opening ~30 public, logged-out pages from [`demo/urls.json`](demo/urls.json), six of which are deliberately ambiguous (marked in the file). It captures the screen with ffmpeg (avfoundation on macOS, x11grab under Xvfb on Linux), so the **real tab strip** is in frame, unlike Playwright's page-only `recordVideo`. The popup is Chrome's real toolbar dropdown, opened with `chrome.action.openPopup()`. Playwright can't click inside an action popup, so the script starts the sort and the undo through the extension's worker, and the open popup updates itself live from the run state, as it does for a user. Captions and cards are rendered as images, and the end card's latency, cost and percent-sorted figures are read from that run's own report. The published video uses the real classifier. `--mock` is for rehearsal only: every caption carries a red MOCK badge, and the committed GIF and poster can only be written by a real-classifier run.
-
-Before recording on macOS, turn on **Do Not Disturb** and close anything that might pop up. avfoundation captures the whole screen. The edit crops to the browser window and writes `demo/out/frame-check.png`. **Look at it before committing the GIF**: with several displays, "Capture screen 0" may not be the screen Chromium opened on. The raw capture is deleted when the run ends, also when editing fails. A real run uses the hosted service, so no key goes into the browser profile. The profile is still deleted on exit (including Ctrl-C), and the next run sweeps any profile a crashed run left behind. The script also checks that screen capture works before it starts, and a real run stops if any page serves a bot check.
-
-## Publishing
-
-`npm run package` builds the store release (mock mode hidden; checks that the only host permission is the HTTPS service) and writes `release/tab-triage-<version>.zip`. Everything the Chrome Web Store dashboard asks for is in [`store/listing.md`](store/listing.md): description, single purpose, permission justifications, data-use answers, reviewer instructions, and the 1280×800 screenshots and promo tile in `store/`, which `npx tsx store/make-assets.ts` regenerates from the latest real-classifier demo.
-
-## Hosted service
-
-The extension calls a small service in [`proxy/`](proxy/README.md): one Vercel Edge Function that holds the TypeSafe key. It accepts only tab-triage's request shape and builds the questions itself, so it can't be used as a general TypeSafe proxy. It checks the origin, rate-limits per install and per IP, and stops for the day at a spending cap. It never logs titles or hostnames. Setup, limits and local testing are in [proxy/README.md](proxy/README.md).
-
-## API key for the scripts
-
-`npm run probe`, `npm run eval` and `npm run demo` read `TYPESAFE_API_KEY` from the environment. The npm scripts also load a `.env` file in the repo root if there is one (Node's `--env-file-if-exists`), so you can keep the key there as `TYPESAFE_API_KEY="…"`. `.env` is gitignored. `npm run probe` is a capped check of 13 requests on public pages, to try before anything larger.
-
-## Development
-
-```bash
-npm run typecheck   # tsc
-npm test            # Vitest unit tests (fake browser that enforces Chrome's tab-group rules)
-npm run test:e2e    # real Chromium smoke test: fresh profile, mock classifier, no network
-npm run build       # dist/
-```
-
-```
-src/core/       pure logic: privacy filter, decision rule, cache, pipeline, plan/undo
-src/providers/  Classifier interface, TypeSafe provider, MockClassifier, request builder
-src/browser/    the only code that touches chrome.tabs / chrome.tabGroups
-src/popup, src/options, src/background.ts
-eval/           labelling, threshold sweep, reliability, SVG chart
-demo/           screen-capture demo pipeline
-```
-
-**A second provider.** Everything depends on the `Classifier` interface (`src/providers/classifier.ts`). A provider such as Google's Gemini Decisions API would only need to map its response onto `RawAnswer` (`choice`, `probabilities`, `noul`, `inputTokens`).
+The Vercel project redeploys the service and the site on every push to `main`.
 
 ## License
 
