@@ -23,7 +23,7 @@ export function findUpstash(env: Record<string, string | undefined>): { url?: st
   return {};
 }
 
-export default async function classify(request: Request): Promise<Response> {
+export default async function classify(request: Request, context?: { waitUntil?: (p: Promise<unknown>) => void }): Promise<Response> {
   const env = process.env;
   const { url, token } = findUpstash(env);
   let fetchError: string | null = null;
@@ -45,5 +45,6 @@ export default async function classify(request: Request): Promise<Response> {
     // Status, outcome and timing only: never the request body.
     log: (e) => console.log(JSON.stringify(e)),
     lastFetchError: () => fetchError,
+    waitUntil: context?.waitUntil?.bind(context),
   });
 }

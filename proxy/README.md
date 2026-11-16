@@ -8,17 +8,18 @@ The extension sends `{v, site, title, groups: [{key, description}], order}` with
 
 | | |
 | - | - |
-| **Request shape** | Only the shape above: a hostname, a title (cut to 120 characters), 1–12 groups with lowercase keys and descriptions of at most 500 characters, and a body under 16 KB. A general TypeSafe request is refused, so the endpoint is useless as a free TypeSafe proxy. |
-| **Origin** | Web pages (an `http(s)` Origin) are refused. Set `ALLOWED_ORIGINS` to the published extension's origin to refuse everything else too. |
-| **Rate limits** | Per install (default 120/min) and per IP (default 300/min). Needs Redis. |
-| **Daily cap** | Stops, with a "paused for today" message in the extension, once the day's input tokens cost `DAILY_BUDGET_USD` (default $5). Needs Redis. |
+| **Request shape** | Only the shape above: a hostname, a title (cut to 120 characters), 1–12 groups with lowercase keys and descriptions of at most 500 characters, and a body under 32 KB. Raw TypeSafe requests are refused. Callers still choose the title and group descriptions, so the endpoint is effectively a small free classifier: the caps below are what limit abuse. |
+| **Origin** | Web pages (an `http(s)` Origin) are refused. `ALLOWED_ORIGINS` restricts it to named extension ids. Browsers can't fake the Origin header but scripts can, so this keeps out other web pages and extensions, not a determined caller. |
+| **Rate limits** | Per install (default 240/min) and per IP, with IPv6 grouped by /64 (default 300/min). Needs Redis. |
+| **Daily caps** | A total (`DAILY_BUDGET_USD`, default $5) and a per-IP share (`PER_IP_DAILY_USD`, default 2% of the total), so one network can't pause the service for everyone. Each request reserves an estimate of its tokens up front, atomically, so parallel requests can't overshoot; the estimate is corrected after the answer. Needs Redis. |
+| **Fails closed** | If Redis errors (including per-command errors inside a 200 reply), requests are refused with 503 rather than served without a cap. |
 | **No retries** | The service never retries upstream; the extension does, with backoff. |
 
-Without Redis, the request-shape and origin checks still apply, but there is no rate limit or daily cap. Don't publish the extension until Redis is connected.
+Without Redis configured at all (local runs), the request-shape and origin checks still apply, but there are no rate limits or caps.
 
 ## Privacy
 
-The service logs only an outcome, a status and a duration per request: never the hostname, title or group descriptions. Rate-limit keys are salted SHA-256 hashes of the install id and the IP address, and expire after a minute. The daily token count expires after two days. See `site/privacy.html`.
+The service logs only an outcome, a status and a duration per request: never the hostname, title or group descriptions. Rate-limit keys are salted SHA-256 hashes of the install id and the IP address. The per-minute keys expire after a minute; the per-IP daily count and the daily total expire after two days. Upstream error details go to the log, never to callers. See `site/privacy.html`.
 
 ## Setup (Vercel)
 
@@ -30,14 +31,15 @@ The service logs only an outcome, a status and a duration per request: never the
    | Variable | Default | |
    | - | - | - |
    | `DAILY_BUDGET_USD` | `5` | Daily spending cap. |
-   | `PER_INSTALL_PER_MIN` | `120` | |
+   | `PER_IP_DAILY_USD` | 2% of the daily cap | One network's daily share. |
+   | `PER_INSTALL_PER_MIN` | `240` | |
    | `PER_IP_PER_MIN` | `300` | |
-   | `RATE_LIMIT_SALT` | `tab-triage` | Any random string; set one. |
+   | `RATE_LIMIT_SALT` | derived from the API key | Optional; any random string. |
    | `ALLOWED_ORIGINS` | (any extension) | Comma-separated. The website download has a fixed id, so once the store assigns one, set `chrome-extension://ophmdbgijgbjigemcpcgcmopkahoehkp,chrome-extension://<store id>`. |
 
 5. **Redeploy** so the variables take effect.
 6. **Point the extension at it.** The production service is `https://tab-triage-pi.vercel.app`, and that's the default. A fork or staging deployment builds with `TAB_TRIAGE_SERVICE=https://<your-domain> npm run build`, which sets both the URL in the code and the manifest's only host permission. Check the domain is really yours first: `tab-triage.vercel.app`, for example, belongs to an unrelated site.
-7. **Check it.** `GET /api/classify` returns `{"configured": true, "limits": true}` when both the key and Redis are set, without showing either value. Don't publish the extension while `limits` is `false`.
+7. **Check it.** `GET /api/classify` returns `{"ok": true, "configured": true, "limits": true, "model": …}` when the key and Redis are both set, without showing either value. It never touches Redis, so it can't be used to drain it; a broken Redis shows up as 503s on POST. Don't publish the extension while `limits` is `false`.
 
 ## Run it locally
 

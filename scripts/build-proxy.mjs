@@ -36,15 +36,15 @@ writeFileSync(
     {
       version: 3,
       routes: [
-        { src: "/privacy", dest: "/privacy.html" },
-        { src: "/install", dest: "/install.html" },
+        { src: "^/(.*)$", headers: { "x-content-type-options": "nosniff", "referrer-policy": "no-referrer" }, continue: true },
+        { src: "^/privacy$", dest: "/privacy.html" },
+        { src: "^/install$", dest: "/install.html" },
         {
-          src: "/download/tab-triage.zip",
+          src: "^/download/tab-triage\\.zip$",
           headers: { "content-disposition": 'attachment; filename="tab-triage.zip"', "cache-control": "public, max-age=300" },
           continue: true,
         },
         { handle: "filesystem" },
-        { src: "/api/classify", dest: "/api/classify" },
       ],
     },
     null,

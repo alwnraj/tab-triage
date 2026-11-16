@@ -10,7 +10,7 @@
   <main>
     <p><a href="/">tab-triage</a></p>
     <h1>Privacy policy</h1>
-    <p class="muted">Last updated 15 November 2026.</p>
+    <p class="muted">Last updated 16 November 2026.</p>
 
     <p>tab-triage is a Chrome extension that sorts the open tabs in one window into Chrome tab groups. This page says exactly what it sends, to whom, and what is kept.</p>
 
@@ -26,7 +26,7 @@
 
     <h2>Who receives it</h2>
     <ol>
-      <li><strong>The tab-triage service</strong> (this site, hosted on Vercel) receives the request, checks it, and passes the hostname, title and group descriptions to TypeSafe. It does not store or log hostnames, titles or group descriptions. For rate limiting it keeps salted hashes of the install id and your IP address for about a minute, and a daily count of tokens used. Vercel, as the host, keeps standard request logs (time, path, status, IP address) for a limited period under <a href="https://vercel.com/legal/privacy-policy">its privacy policy</a>.</li>
+      <li><strong>The tab-triage service</strong> (this site, hosted on Vercel) receives the request, checks it, and passes the hostname, title and group descriptions to TypeSafe. It does not store or log hostnames, titles or group descriptions. For rate limiting and spending caps it keeps salted hashes (not the values themselves) of the install id and of your IP address: the per-minute counters expire after a minute, and a per-network daily usage count expires after two days. It also keeps a daily total of tokens used. Vercel, as the host, keeps standard request logs (time, path, status, IP address) for a limited period under <a href="https://vercel.com/legal/privacy-policy">its privacy policy</a>.</li>
       <li><strong>TypeSafe</strong> (<code>api.typesafe.ai</code>) classifies the tab and returns probabilities. TypeSafe's handling of request data is described in <a href="https://docs.typesafe.ai/legal.md">its legal and data-handling pages</a>.</li>
     </ol>
 

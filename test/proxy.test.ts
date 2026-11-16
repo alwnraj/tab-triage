@@ -61,7 +61,8 @@ describe("hosted service (proxy/handler.ts)", () => {
     const sent = JSON.parse(String(calls[0]!.init.body));
     expect(sent.state).toEqual({ site: "arxiv.org", title: "Attention Is All You Need" });
     expect(Object.keys(sent.questions)).toEqual(["group", "fits"]);
-    expect(limiter.counts.get("tokens:2026-11-15")).toBe(600);
+    // The reservation is replaced by the real count after the call.
+    expect(limiter.counts.get("tt:tokens:2026-11-15")).toBe(600);
   });
 
   it("never logs the hostname, title or key", async () => {
@@ -73,11 +74,7 @@ describe("hosted service (proxy/handler.ts)", () => {
 
   it("refuses other methods, web-page origins and origins off the allow-list", async () => {
     const health = await setup().call(BODY, {}, "GET");
-    expect(await health.json()).toEqual({ ok: true, configured: true, limits: true, limitsReachable: true, model: "jev-1.14.0" });
-    const bare = await setup(undefined, { TYPESAFE_API_KEY: KEY, KV_URL: "redis://secret" } as Env, null as never).call(BODY, {}, "GET");
-    const h = await bare.text();
-    expect(JSON.parse(h)).toMatchObject({ limits: false, redisVariables: ["KV_URL"] });
-    expect(h).not.toContain("secret");
+    expect(await health.json()).toEqual({ ok: true, configured: true, limits: true, model: "jev-1.14.0" });
     expect((await setup().call(BODY, {}, "PUT")).status).toBe(405);
     expect((await setup().call(BODY, { origin: "https://evil.example" })).status).toBe(403);
     const listed = setup(undefined, { TYPESAFE_API_KEY: KEY, ALLOWED_ORIGINS: "chrome-extension://onlythisone" });
@@ -110,7 +107,7 @@ describe("hosted service (proxy/handler.ts)", () => {
     for (const b of bad) expect((await call(b)).status, JSON.stringify(b).slice(0, 60)).toBe(400);
     expect((await call("{not json")).status).toBe(400);
     expect((await call(BODY, { [INSTALL_HEADER]: "not-a-uuid" })).status).toBe(400);
-    expect((await call(JSON.stringify({ ...BODY, pad: "x".repeat(20_000) }))).status).toBe(413);
+    expect((await call(JSON.stringify({ ...BODY, pad: "x".repeat(40_000) }))).status).toBe(413);
     expect(calls).toHaveLength(0);
   });
 
@@ -136,11 +133,31 @@ describe("hosted service (proxy/handler.ts)", () => {
   it("stops for the day at the spending cap", async () => {
     const limiter = memoryLimiter();
     // $0.00002 is under one request's worth of tokens (600 × $0.042/M ≈ $0.000025).
-    const { call } = setup(undefined, { TYPESAFE_API_KEY: KEY, DAILY_BUDGET_USD: "0.00002" }, limiter);
+    const { call } = setup(undefined, { TYPESAFE_API_KEY: KEY, DAILY_BUDGET_USD: "0.00002", PER_IP_DAILY_USD: "1" }, limiter);
     expect((await call()).status).toBe(200);
     const r = await call();
     expect(r.status).toBe(503);
     expect(r.headers.get(ERROR_HEADER)).toBe("budget");
+    // A refused request gives its reservation back.
+    expect(limiter.counts.get("tt:tokens:2026-11-15")).toBe(600);
+  });
+
+  it("caps each IP's share of the day, so one network can't pause the service for everyone", async () => {
+    const env = { TYPESAFE_API_KEY: KEY, DAILY_BUDGET_USD: "100", PER_IP_DAILY_USD: "0.00002" };
+    const { call } = setup(undefined, env);
+    expect((await call()).status).toBe(200);
+    expect((await call(BODY, { [INSTALL_HEADER]: "11111111-2222-4333-8444-555555555555" })).status).toBe(503);
+    // Another network is unaffected.
+    expect((await call(BODY, { "x-real-ip": "198.51.100.9" })).status).toBe(200);
+  });
+
+  it("buckets IPv6 by /64 and unwraps IPv4-mapped addresses", async () => {
+    const { ipBucket } = await import("../proxy/handler.js");
+    const at = (ip: string) => ipBucket(new Request("https://x", { headers: { "x-real-ip": ip } }));
+    expect(at("2001:db8:1:2:aaaa:bbbb:cccc:dddd")).toBe(at("2001:db8:1:2::1"));
+    expect(at("2001:db8:1:2::1")).not.toBe(at("2001:db8:1:3::1"));
+    expect(at("::ffff:203.0.113.7")).toBe("203.0.113.7");
+    expect(at("203.0.113.7")).toBe("203.0.113.7");
   });
 
   it("makes exactly one upstream call and maps upstream errors", async () => {
@@ -154,16 +171,32 @@ describe("hosted service (proxy/handler.ts)", () => {
     ];
     for (const [up, want] of cases) {
       const { call, calls } = setup([up]);
-      expect((await call()).status).toBe(want);
+      const r = await call();
+      expect(r.status).toBe(want);
+      expect(Object.keys(await r.json())).toEqual(["error"]); // details go to the log only
       expect(calls).toHaveLength(1);
     }
   });
 
-  it("fails open if the limiter is down, and says so in the log", async () => {
-    const broken = { over: async () => Promise.reject(new Error("redis down")), tokensToday: async () => 0, addTokens: async () => undefined };
-    const { call, logs } = setup(undefined, { TYPESAFE_API_KEY: KEY }, broken as never);
-    expect((await call()).status).toBe(200);
+  it("fails closed if the limiter is down: no upstream call, no spending without a cap", async () => {
+    const broken = { admit: async () => Promise.reject(new Error("redis down")), settle: async () => undefined };
+    const { call, calls, logs } = setup(undefined, { TYPESAFE_API_KEY: KEY }, broken as never);
+    const r = await call();
+    expect(r.status).toBe(503);
+    expect(r.headers.get(ERROR_HEADER)).toBe("unavailable");
+    expect(calls).toHaveLength(0);
     expect(logs.some((l) => l.includes("limiter_error"))).toBe(true);
+  });
+
+  it("treats a per-command Redis error inside a 200 reply as a failure", async () => {
+    const { upstashLimiter } = await import("../proxy/limits.js");
+    const reply = (body: unknown) => (async () => new Response(JSON.stringify(body), { status: 200 })) as unknown as typeof fetch;
+    const keys = { install: "a", ip: "b", day: "c", ipDay: "d" };
+    const errored = Array.from({ length: 8 }, () => ({ error: "ERR max requests limit exceeded" }));
+    await expect(upstashLimiter("https://r.example", "t", reply(errored)).admit(keys, 400)).rejects.toThrow();
+    await expect(upstashLimiter("https://r.example", "t", reply([{ result: 1 }])).admit(keys, 400)).rejects.toThrow();
+    const ok = [1, 1, 1, 1, 400, 1, 400, 1].map((result) => ({ result }));
+    await expect(upstashLimiter("https://r.example", "t", reply(ok)).admit(keys, 400)).resolves.toEqual({ installCount: 1, ipCount: 1, dayTokens: 400, ipDayTokens: 400 });
   });
 });
 
