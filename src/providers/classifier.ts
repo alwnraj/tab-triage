@@ -39,7 +39,7 @@ const MESSAGES: Record<ClassifierErrorKind, (who: string) => string> = {
   server: (w) => `${w} had a server error.`,
   no_key: () => "No API key set.",
   budget: () => "Stopped: the call budget for this run was reached.",
-  unavailable: (w) => `${w} is paused for today. Try again tomorrow.`,
+  unavailable: (w) => `${w} isn't accepting requests right now. Try again later.`,
 };
 
 /** Never carries the request body or any key; only a kind and status. */

@@ -9,7 +9,7 @@ import { ClassifierError } from "./providers/classifier.js";
 import { MockClassifier } from "./providers/mock.js";
 import { RELEASE } from "./core/config.js";
 import { HostedClassifier } from "./providers/hosted.js";
-import { chromeKV, installId, loadSettings, removeLegacyApiKey, saveSettings } from "./settings.js";
+import { chromeKV, installId, loadSettings, saveSettings } from "./settings.js";
 
 const local = chromeKV(chrome.storage.local);
 const session = chromeKV(chrome.storage.session);
@@ -25,8 +25,13 @@ chrome.runtime.onInstalled.addListener(async ({ reason }) => {
   const s = await loadSettings(local);
   await saveSettings(local, s); // materialise defaults
   await installId(local);
-  await removeLegacyApiKey(local);
   if (reason === "install" && !s.consentAt) await chrome.runtime.openOptionsPage();
+});
+
+// A worker that stopped mid-run leaves its "running" marker behind; nothing runs at startup.
+void chrome.storage.session.get(null).then((all) => {
+  const stale = Object.keys(all).filter((k) => k.startsWith("run:"));
+  if (stale.length) return chrome.storage.session.remove(stale);
 });
 
 async function state(windowId: number) {
@@ -58,8 +63,11 @@ async function handle(msg: unknown): Promise<Response> {
   if (running) return { ok: false, error: "A sort is already running.", running, ...(await state(req.windowId)) };
 
   running = true;
-  await session.set({ [runKey(req.windowId)]: req.type });
+  // Chrome may stop an idle worker after ~30 s; a run can wait up to a minute on a rate limit.
+  // Any extension API call counts as activity.
+  const keepAlive = setInterval(() => void chrome.runtime.getPlatformInfo(), 20_000);
   try {
+    await session.set({ [runKey(req.windowId)]: req.type });
     if (req.type === "undo") {
       const snap = (await session.get([undoKey(req.windowId)]))[undoKey(req.windowId)] as Snapshot | undefined;
       if (!snap) return { ok: false, error: "Nothing to undo.", running: false, ...(await state(req.windowId)) };
@@ -74,19 +82,19 @@ async function handle(msg: unknown): Promise<Response> {
     }
 
     const settings = await loadSettings(local);
-    if (!settings.consentAt) return { ok: false, error: "Please review and accept what gets sent (Options page) first." };
-    if (Math.abs(req.threshold - settings.threshold) > 1e-9) await saveSettings(local, { ...settings, threshold: req.threshold });
+    if (!settings.consentAt)
+      return { ok: false, error: "Please review and accept what gets sent (Options page) first.", ...(await state(req.windowId)) };
 
     let classifier: Classifier;
     try {
       // Mock mode is a developer tool; a store build ignores a stale setting.
       classifier = await makeClassifier(settings.mockMode && !RELEASE);
     } catch (e) {
-      return { ok: false, error: e instanceof ClassifierError ? e.message : "Couldn't start the classifier." };
+      return { ok: false, error: e instanceof ClassifierError ? e.message : "Couldn't start the classifier.", ...(await state(req.windowId)) };
     }
 
     const report = await runSort(
-      { windowId: req.windowId, threshold: req.threshold, collapse: settings.collapse, groups: settings.groups, blocklist: settings.blocklist },
+      { windowId: req.windowId, threshold: settings.threshold, collapse: settings.collapse, groups: settings.groups, blocklist: settings.blocklist },
       {
         browser: chromeAdapter,
         classifier,
@@ -100,16 +108,21 @@ async function handle(msg: unknown): Promise<Response> {
   } catch (e) {
     // Never crash the worker; never echo internals that could contain secrets.
     console.warn("tab-triage: run failed:", e instanceof Error ? e.name : "unknown");
-    return { ok: false, error: "Something went wrong. No further tabs were moved; try Undo if anything changed." };
+    return {
+      ok: false,
+      error: "Something went wrong. No further tabs were moved; try Undo if anything changed.",
+      ...(await state(req.windowId).catch(() => ({ report: null, canUndo: false }))),
+    };
   } finally {
+    clearInterval(keepAlive);
     running = false;
     await session.remove([runKey(req.windowId)]).catch(() => undefined);
   }
 }
 
-// For automation (the demo drives a sort while the real toolbar popup is open, which
-// Playwright can't click into). Only code already running inside this worker can reach it.
-(globalThis as { tabTriage?: unknown }).tabTriage = { handle };
+// For automation in dev builds (the demo drives a sort while the real toolbar popup is
+// open, which Playwright can't click into). Only code inside this worker can reach it.
+if (!RELEASE) (globalThis as { tabTriage?: unknown }).tabTriage = { handle };
 
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   // Only our own extension pages may drive the worker.

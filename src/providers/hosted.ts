@@ -51,6 +51,8 @@ export class HostedClassifier implements Classifier {
       timeoutMs: this.timeoutMs,
       who: WHO,
       signal,
+      // The service's per-minute limit says exactly when to come back; a big window may need to wait for it.
+      retryAfterCapMs: 60_000,
       classify: (status, headers) => {
         // The service is paused (daily budget reached or not configured): retrying won't help.
         if (status === 503 && headers.get(ERROR_HEADER)) return { kind: "unavailable", retry: false };

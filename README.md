@@ -14,7 +14,7 @@ A Chrome extension that sorts the tabs in the current window into Chrome tab gro
 4. Group the tab only if both probabilities are at least the threshold (default 0.8). If it's within 0.1 of the threshold, ask again with the options reversed and group it only if the answer doesn't change. This guards against the model favouring the first option.
 5. Classify every tab first, then move them. If anything fails, no tab moves. Undo restores the saved snapshot.
 
-Only the hostname and the first 120 characters of the title leave the browser. They go to a small hosted service (`proxy/`), which holds the [TypeSafe](https://docs.typesafe.ai) API key and forwards the request. Nothing is logged or stored there. See the [privacy policy](https://tab-triage-pi.vercel.app/privacy).
+Only the hostname and the first 120 characters of the title leave the browser. They go to a small hosted service (`proxy/`), which holds the [TypeSafe](https://docs.typesafe.ai) API key and forwards the request. It never logs or stores hostnames, titles or group descriptions; it keeps only hashed rate-limit counters. See the [privacy policy](https://tab-triage-pi.vercel.app/privacy).
 
 ## Project layout
 
@@ -46,7 +46,7 @@ npm run typecheck
 
 Options → Mock mode switches to a keyword matcher, so no API calls are made (dev builds only).
 
-To point the extension at a local or staging service, build with `TAB_TRIAGE_SERVICE=http://localhost:8787 npm run build`. Running the service locally is covered in [proxy/README.md](proxy/README.md).
+Dev builds call the production service, so they spend real budget (use Mock mode while iterating). Once `ALLOWED_ORIGINS` is set on the service, an unpacked `dist/` has a different extension id and gets 403s. To point the extension at a local or staging service instead, build with `TAB_TRIAGE_SERVICE=http://localhost:8787 npm run build`. Running the service locally is covered in [proxy/README.md](proxy/README.md).
 
 ## Scripts that call TypeSafe directly
 

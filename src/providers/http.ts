@@ -12,6 +12,8 @@ export interface PostOptions {
   signal?: AbortSignal;
   /** Called once per HTTP attempt; lets scripts enforce a hard call budget. */
   onAttempt?: () => void;
+  /** Longest retry-after to honour (default RETRY_AFTER_CAP_MS). */
+  retryAfterCapMs?: number;
   /** Retries after the first attempt (default MAX_RETRIES). The hosted service uses 0: the client retries. */
   retries?: number;
   /** Map a non-2xx response to an error kind and whether retrying can help. */
@@ -34,12 +36,12 @@ export function kindFor(status: number): ClassifierErrorKind {
 }
 
 /** retry-after in seconds (or an HTTP date), capped. */
-export function parseRetryAfter(h: string | null, now = Date.now()): number | null {
+export function parseRetryAfter(h: string | null, now = Date.now(), cap = RETRY_AFTER_CAP_MS): number | null {
   if (!h) return null;
   const secs = Number(h);
   const ms = Number.isFinite(secs) ? secs * 1000 : Date.parse(h) - now;
   if (!Number.isFinite(ms) || ms < 0) return null;
-  return Math.min(ms, RETRY_AFTER_CAP_MS);
+  return Math.min(ms, cap);
 }
 
 const defaultClassify = (status: number) => ({ kind: kindFor(status), retry: retryable(status) });
@@ -80,7 +82,7 @@ export async function postJson(url: string, headers: Record<string, string>, bod
       } else {
         const c = classify(res.status, res.headers);
         const e = err(c.kind, res.status, attempt + 1);
-        if (c.retry) retryAfter = parseRetryAfter(res.headers.get("retry-after"));
+        if (c.retry) retryAfter = parseRetryAfter(res.headers.get("retry-after"), Date.now(), o.retryAfterCapMs);
         outcome = c.retry ? { retry: e } : { stop: e };
       }
     } catch {

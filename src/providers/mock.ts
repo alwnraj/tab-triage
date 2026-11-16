@@ -27,7 +27,7 @@ export class MockClassifier implements Classifier {
   async classify(input: TabInput, groups: readonly ModelGroup[], order: Order): Promise<RawAnswer> {
     if (this.delayMs) await new Promise((r) => setTimeout(r, this.delayMs));
     const text = new Set(words(`${input.site.replace(/\./g, " ")} ${input.title}`));
-    const hits = groups.map((g) => words(g.description + " " + g.key.slice(2)).filter((w) => text.has(w)).length);
+    const hits = groups.map((g) => words(g.description + " " + g.key).filter((w) => text.has(w)).length);
     // Mimic the documented first-option lean: whichever option is listed first gets a small bonus,
     // so reversing the order can genuinely change the top answer and exercise the re-ask path.
     const first = (order === "fwd" ? groups[0] : groups[groups.length - 1])?.key;

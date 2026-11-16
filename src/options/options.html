@@ -30,7 +30,7 @@
           <code>chrome://</code>, extension and file pages; localhost, IP addresses and intranet names; anything on your blocklist.</li>
         <li><strong>Also sent:</strong> a random install id, used only for rate limiting. It isn't linked to you or your Google account.</li>
         <li><strong>Who receives it:</strong> the tab-triage service (<code id="service-host"></code>), which forwards the hostname, title and group descriptions to TypeSafe and stores none of them.</li>
-        <li><strong>Stored locally:</strong> answers cached for 7 days under a hash key (no hostname or title stored).</li>
+        <li><strong>Stored locally:</strong> answers cached for 7 days under a hash key (no hostname or title stored), and the last sort's results for this browser session, so the popup can show them and Undo can restore the tabs.</li>
       </ul>
       <p class="muted">Example request built by the same code the extension uses:</p>
       <pre id="example" aria-label="Example request"></pre>
@@ -41,6 +41,7 @@
       <p class="muted">The description is the classification criterion, written in plain language. Domains (optional, comma-separated) are matched locally first; a group with domains and no description is never sent to the API.</p>
       <div id="groups"></div>
       <button id="add-group">Add group</button>
+      <span id="group-limit" class="muted hidden">Up to 12 groups.</span>
     </section>
 
 
@@ -69,8 +70,10 @@
     <section class="card">
       <h2>Data</h2>
       <button id="clear-cache">Clear cached answers</button>
-      <button id="export">Export open tabs for labelling</button>
-      <p class="muted">The export contains hostname and 120-character title only, with the same filters as sorting (pinned, incognito, local and blocklisted tabs are left out; tabs already in a group are included). It is for <code>npm run eval:label</code>; keep it out of git.</p>
+      <div id="export-row">
+        <button id="export">Export open tabs for labelling</button>
+        <p class="muted">Developer tool. The export contains hostname and 120-character title only, with the same filters as sorting (pinned, incognito, local and blocklisted tabs are left out; tabs already in a group are included). It is for <code>npm run eval:label</code>; keep it out of git.</p>
+      </div>
       <p id="data-status" class="muted"></p>
     </section>
 

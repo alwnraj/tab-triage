@@ -1,10 +1,10 @@
-# Chrome Web Store listing: tab-triage 1.0.0
+# Chrome Web Store listing: tab-triage 1.0.1
 
-Everything to paste into the [developer dashboard](https://chrome.google.com/webstore/devconsole), in the order the dashboard asks for it. The package is `release/tab-triage-1.0.0.zip` (`npm run package`). The images are in this folder (`npx tsx store/make-assets.ts` regenerates them from the latest real-classifier demo).
+Everything to paste into the [developer dashboard](https://chrome.google.com/webstore/devconsole), in the order the dashboard asks for it. The package is `release/tab-triage-1.0.1.zip` (`npm run package`). The images are in this folder (`npx tsx store/make-assets.ts` regenerates them from the latest real-classifier demo).
 
 ## Package tab
 
-Upload `release/tab-triage-1.0.0.zip`, **not** the `-download.zip`: that one carries a manifest `key` for the website install, and the store rejects it.
+Upload `release/tab-triage-1.0.1.zip`, **not** the `-download.zip`: that one carries a manifest `key` for the website install, and the store rejects it.
 
 ## Store listing tab
 
@@ -69,7 +69,7 @@ Upload `release/tab-triage-1.0.0.zip`, **not** the `-download.zip`: that one car
 **Data usage:** tick these:
 - **Web history**: the hostname and title of open tabs, sent only when the user presses Sort, to classify them.
 
-  Leave everything else unticked. The anonymous install id isn't personally identifiable, and no personal information, authentication, location, communications, financial, health or user-activity data is collected.
+  Leave everything else unticked. The install id is random and not linked to a person. The service sees IP addresses (as any web server does) but keeps only salted hashes, for rate limiting, which the privacy policy discloses. No personal information, authentication, communications, financial, health or user-activity data is collected.
 
 **Certifications:** tick all three:
 - I do not sell or transfer user data to third parties, outside of the approved use cases.
@@ -96,7 +96,7 @@ Upload `release/tab-triage-1.0.0.zip`, **not** the `-download.zip`: that one car
 
 ## After it's approved
 
-1. Copy the extension's id from the dashboard and set `ALLOWED_ORIGINS=chrome-extension://ophmdbgijgbjigemcpcgcmopkahoehkp,chrome-extension://<store id>` in the Vercel project's environment variables (the first is the website download's fixed id), then redeploy. The service will then refuse requests from any other origin.
+1. Copy the extension's id from the dashboard and set `ALLOWED_ORIGINS=chrome-extension://ophmdbgijgbjigemcpcgcmopkahoehkp,chrome-extension://<store id>` in the Vercel project's environment variables (the first is the website download's fixed id), then redeploy. The service will then refuse requests from other web pages and extensions. (Scripts can fake the Origin header; the rate limits and daily caps are what limit abuse.)
 2. Check `https://tab-triage-pi.vercel.app/api/classify` still shows `"limits": true, "limitsReachable": true`.
 3. Add the store link to the README, `site/index.html` and `site/install.html` (which can then point to the store first and keep the zip as a fallback).
 

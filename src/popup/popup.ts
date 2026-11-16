@@ -11,8 +11,8 @@ const msg = $("message");
 const summary = $("summary");
 const list = $("results");
 const mockTag = $("mock");
-// The threshold is a setting (Options page); the popup reads it when it opens.
-let threshold = 0.8;
+/** An error from this popup's own Sort/Undo click; kept on screen until the next action. */
+let clickError: string | null = null;
 
 const REASON: Record<DecisionReason, string> = {
   domain: "domain rule",
@@ -98,6 +98,7 @@ function apply(res: Response) {
   undoBtn.disabled = !res.canUndo;
   sortBtn.disabled = !!res.running || !consented;
   if (!res.ok) showMessage(res.error, "err");
+  else if (clickError) showMessage(clickError, "err");
   else if (res.report?.message) showMessage(res.report.message, res.report.ok ? "warn" : "err");
   else showMessage(null);
 }
@@ -108,7 +109,6 @@ async function init() {
 
   const settings = await loadSettings(chromeKV(chrome.storage.local));
   groups = settings.groups;
-  threshold = settings.threshold;
   consented = !!settings.consentAt;
   $("consent").classList.toggle("hidden", consented);
 }
@@ -117,14 +117,19 @@ sortBtn.addEventListener("click", async () => {
   sortBtn.disabled = true;
   undoBtn.disabled = true;
   sortBtn.textContent = "Sorting…";
+  clickError = null;
   showMessage(null);
-  const res = await send({ type: "sort", windowId, threshold });
+  const res = await send({ type: "sort", windowId });
+  clickError = res.ok ? null : res.error;
   sortBtn.textContent = "Sort tabs";
   apply(res);
 });
 undoBtn.addEventListener("click", async () => {
   undoBtn.disabled = true;
-  apply(await send({ type: "undo", windowId }));
+  clickError = null;
+  const res = await send({ type: "undo", windowId });
+  clickError = res.ok ? null : res.error;
+  apply(res);
 });
 for (const id of ["options", "open-consent"])
   $(id).addEventListener("click", (e) => {
@@ -138,8 +143,10 @@ async function refresh() {
   const run = (await chrome.storage.session.get(`run:${windowId}`))[`run:${windowId}`];
   const res = await send({ type: "status", windowId });
   apply(res);
-  sortBtn.textContent = run === "sort" ? "Sorting…" : "Sort tabs";
-  if (run) {
+  // Trust the worker over the marker: a worker that died mid-run can leave a stale one.
+  const live = res.running ? run : undefined;
+  sortBtn.textContent = live === "sort" ? "Sorting…" : "Sort tabs";
+  if (live) {
     sortBtn.disabled = true;
     undoBtn.disabled = true;
   }

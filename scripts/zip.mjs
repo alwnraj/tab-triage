@@ -53,7 +53,7 @@ export function zipDir(dir, overrides = {}, prefix = "") {
     local.push(h, name, comp);
     const c = Buffer.alloc(46);
     c.writeUInt32LE(0x02014b50, 0);
-    c.writeUInt16LE(20, 4);
+    c.writeUInt16LE((3 << 8) | 20, 4); // "made by" Unix, so the file mode below is honoured
     c.writeUInt16LE(20, 6);
     c.writeUInt16LE(0x0800, 8);
     c.writeUInt16LE(8, 10);

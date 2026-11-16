@@ -31,7 +31,6 @@ export const DEFAULT_SETTINGS: Settings = {
 };
 
 const SETTINGS_KEY = "settings";
-const API_KEY_KEY = "apiKey";
 
 function isColor(c: unknown): c is GroupColor {
   return typeof c === "string" && (GROUP_COLORS as readonly string[]).includes(c);
@@ -68,11 +67,6 @@ export async function loadSettings(kv: KV): Promise<Settings> {
 export async function saveSettings(kv: KV, s: Settings): Promise<void> {
   await kv.set({ [SETTINGS_KEY]: sanitize(s) });
 }
-/** Removes the API key that versions before 1.0 stored. */
-export async function removeLegacyApiKey(kv: KV): Promise<void> {
-  await kv.remove([API_KEY_KEY]);
-}
-
 const INSTALL_ID_KEY = "installId";
 /**
  * An anonymous random id for this install, sent to the hosted service for rate

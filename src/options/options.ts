@@ -1,4 +1,4 @@
-import { MODEL_ID, RELEASE, SERVICE_URL } from "../core/config.js";
+import { MAX_GROUPS, MODEL_ID, RELEASE, SERVICE_URL } from "../core/config.js";
 import { type HostedRequest, INSTALL_HEADER } from "../providers/wire.js";
 import { AnswerCache } from "../core/cache.js";
 import { toModelGroups } from "../core/groups.js";
@@ -6,7 +6,7 @@ import { normalizeDomain, toTabInput, truncateTitle } from "../core/privacy.js";
 import { GROUP_COLORS, type GroupDef } from "../core/types.js";
 import { buildRequest } from "../providers/request.js";
 import type { SortReport } from "../core/sort.js";
-import { chromeKV, loadSettings, saveSettings, type Settings } from "../settings.js";
+import { chromeKV, loadSettings, sanitize, saveSettings, type Settings } from "../settings.js";
 
 const kv = chromeKV(chrome.storage.local);
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
@@ -17,13 +17,18 @@ function el<K extends keyof HTMLElementTagNameMap>(tag: K, props: Partial<HTMLEl
 }
 
 let saveTimer: ReturnType<typeof setTimeout> | undefined;
+/** What this page last wrote, so its own writes don't trigger a re-render below. */
+let lastSaved = "";
+async function saveNow() {
+  clearTimeout(saveTimer);
+  lastSaved = JSON.stringify(sanitize(s));
+  await saveSettings(kv, s);
+  $("saved").textContent = "Saved.";
+  setTimeout(() => ($("saved").textContent = ""), 1500);
+}
 function persist() {
   clearTimeout(saveTimer);
-  saveTimer = setTimeout(async () => {
-    await saveSettings(kv, s);
-    $("saved").textContent = "Saved.";
-    setTimeout(() => ($("saved").textContent = ""), 1500);
-  }, 250);
+  saveTimer = setTimeout(() => void saveNow(), 250);
   renderExample();
 }
 
@@ -74,6 +79,10 @@ function groupRow(g: GroupDef): HTMLElement {
 
 function renderGroups() {
   $("groups").replaceChildren(...s.groups.map(groupRow));
+  // The service accepts at most MAX_GROUPS groups per request.
+  const full = s.groups.length >= MAX_GROUPS;
+  $<HTMLButtonElement>("add-group").disabled = full;
+  $("group-limit").classList.toggle("hidden", !full);
 }
 
 function renderConsent() {
@@ -115,28 +124,37 @@ async function renderLastSort() {
     `${Math.round(m.sortedPct * 100)}% sorted · ${m.apiCalls} calls, ${m.cacheHits} cached · ${r.mock ? "MOCK classifier" : r.classifierId}`;
 }
 
-async function init() {
-  s = await loadSettings(kv);
+function renderAll() {
   renderGroups();
   renderConsent();
   renderExample();
-  if (RELEASE) $("mock-row").classList.add("hidden");
+  $<HTMLTextAreaElement>("blocklist").value = s.blocklist.join("\n");
+  $<HTMLInputElement>("threshold").value = String(s.threshold);
+  $("threshold-value").textContent = s.threshold.toFixed(2);
+  $<HTMLInputElement>("collapse").checked = s.collapse;
+  $<HTMLInputElement>("mock").checked = s.mockMode;
+}
+
+async function init() {
+  s = await loadSettings(kv);
+  lastSaved = JSON.stringify(s);
+  renderAll();
+  if (RELEASE) {
+    $("mock-row").classList.add("hidden");
+    $("export-row").classList.add("hidden");
+  }
   $("service-host").textContent = new URL(SERVICE_URL).host;
   $<HTMLAnchorElement>("privacy-link").href = `${SERVICE_URL}/privacy`;
-  $<HTMLTextAreaElement>("blocklist").value = s.blocklist.join("\n");
   const th = $<HTMLInputElement>("threshold");
-  th.value = String(s.threshold);
-  $("threshold-value").textContent = s.threshold.toFixed(2);
   th.addEventListener("input", () => {
     s.threshold = Number(th.value);
     $("threshold-value").textContent = s.threshold.toFixed(2);
     persist();
   });
   void renderLastSort();
-  $<HTMLInputElement>("collapse").checked = s.collapse;
-  $<HTMLInputElement>("mock").checked = s.mockMode;
 
   $("add-group").addEventListener("click", () => {
+    if (s.groups.length >= MAX_GROUPS) return;
     s.groups.push({ id: crypto.randomUUID(), name: "New group", color: "grey", description: "", domains: [] });
     renderGroups();
     persist();
@@ -148,21 +166,35 @@ async function init() {
   });
   $("collapse").addEventListener("change", () => ((s.collapse = $<HTMLInputElement>("collapse").checked), persist()));
   $("mock").addEventListener("change", () => ((s.mockMode = $<HTMLInputElement>("mock").checked), persist()));
+  // Consent is saved at once, not debounced: closing the tab right after must not lose it.
   $("accept").addEventListener("click", () => {
     s.consentAt = Date.now();
     renderConsent();
-    persist();
+    void saveNow();
   });
   $("revoke").addEventListener("click", () => {
     s.consentAt = null;
     renderConsent();
-    persist();
+    void saveNow();
   });
   $("clear-cache").addEventListener("click", async () => {
     await new AnswerCache(kv).clear();
     $("data-status").textContent = "Cache cleared.";
   });
   $("export").addEventListener("click", () => void exportTabs());
+
+  // Stay current: settings changed in another Options tab, and the latest sort's numbers.
+  chrome.storage.onChanged.addListener(async (changes, area) => {
+    if (area === "session" && Object.keys(changes).some((k) => k.startsWith("report:"))) void renderLastSort();
+    if (area === "local" && "settings" in changes) {
+      const fresh = await loadSettings(kv);
+      if (JSON.stringify(fresh) === lastSaved) return; // our own write
+      clearTimeout(saveTimer);
+      s = fresh;
+      lastSaved = JSON.stringify(s);
+      renderAll();
+    }
+  });
 }
 
 void init();

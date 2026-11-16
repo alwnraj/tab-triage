@@ -1,11 +1,7 @@
 import { hostMatches } from "./privacy.js";
 import type { GroupDef, ModelGroup, Order } from "./types.js";
 
-/**
- * Option keys sent to the model. Always prefixed with "g_" so they are never
- * integer-like: JS objects put integer-like keys first regardless of insertion
- * order, which would silently defeat the order-reversal check.
- */
+/** Option keys sent to the model: a plain lowercase slug of the group name. */
 export function slugKey(name: string): string {
   const base = name
     .normalize("NFKD")
