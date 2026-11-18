@@ -97,7 +97,7 @@ describe("hosted service (proxy/handler.ts)", () => {
       { ...BODY, title: "x".repeat(2000) },
       { ...BODY, order: "sideways" },
       { ...BODY, groups: [] },
-      { ...BODY, groups: Array.from({ length: 13 }, (_, i) => ({ key: `g${i}`, description: "d" })) },
+      { ...BODY, groups: Array.from({ length: 17 }, (_, i) => ({ key: `g${i}`, description: "d" })) },
       { ...BODY, groups: [{ key: "Has Spaces", description: "d" }] },
       { ...BODY, groups: [{ key: "a", description: "x".repeat(501) }] },
       { ...BODY, groups: [{ key: "a", description: "d" }, { key: "a", description: "e" }] },

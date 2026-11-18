@@ -133,6 +133,8 @@ function renderAll() {
   $("threshold-value").textContent = s.threshold.toFixed(2);
   $<HTMLInputElement>("collapse").checked = s.collapse;
   $<HTMLInputElement>("mock").checked = s.mockMode;
+  $<HTMLInputElement>("strict").checked = s.strict;
+  $<HTMLInputElement>("threshold").disabled = !s.strict;
 }
 
 async function init() {
@@ -162,6 +164,11 @@ async function init() {
   $("blocklist").addEventListener("change", () => {
     s.blocklist = $<HTMLTextAreaElement>("blocklist").value.split(/\s+/).map(normalizeDomain).filter(Boolean);
     $<HTMLTextAreaElement>("blocklist").value = s.blocklist.join("\n");
+    persist();
+  });
+  $("strict").addEventListener("change", () => {
+    s.strict = $<HTMLInputElement>("strict").checked;
+    $<HTMLInputElement>("threshold").disabled = !s.strict;
     persist();
   });
   $("collapse").addEventListener("change", () => ((s.collapse = $<HTMLInputElement>("collapse").checked), persist()));

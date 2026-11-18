@@ -9,7 +9,7 @@ import { ClassifierError } from "./providers/classifier.js";
 import { MockClassifier } from "./providers/mock.js";
 import { RELEASE } from "./core/config.js";
 import { HostedClassifier } from "./providers/hosted.js";
-import { chromeKV, installId, loadSettings, saveSettings } from "./settings.js";
+import { chromeKV, installId, loadSettings, saveSettings, upgradeDefaultGroups } from "./settings.js";
 
 const local = chromeKV(chrome.storage.local);
 const session = chromeKV(chrome.storage.session);
@@ -23,7 +23,7 @@ const runKey = (w: number) => `run:${w}`;
 
 chrome.runtime.onInstalled.addListener(async ({ reason }) => {
   const s = await loadSettings(local);
-  await saveSettings(local, s); // materialise defaults
+  await saveSettings(local, upgradeDefaultGroups(s)); // materialise defaults; upgrade 1.0.x defaults
   await installId(local);
   if (reason === "install" && !s.consentAt) await chrome.runtime.openOptionsPage();
 });
@@ -94,7 +94,7 @@ async function handle(msg: unknown): Promise<Response> {
     }
 
     const report = await runSort(
-      { windowId: req.windowId, threshold: settings.threshold, collapse: settings.collapse, groups: settings.groups, blocklist: settings.blocklist },
+      { windowId: req.windowId, threshold: settings.threshold, strict: settings.strict, collapse: settings.collapse, groups: settings.groups, blocklist: settings.blocklist },
       {
         browser: chromeAdapter,
         classifier,

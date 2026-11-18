@@ -2,7 +2,7 @@ import type { Classifier } from "../providers/classifier.js";
 import { ClassifierError } from "../providers/classifier.js";
 import { AnswerCache, cacheKey, groupsHash } from "./cache.js";
 import { CONCURRENCY } from "./config.js";
-import { decide, domainDecision } from "./decide.js";
+import { bestGuess, decide, domainDecision } from "./decide.js";
 import { matchDomain, toModelGroups } from "./groups.js";
 import { toTabInput } from "./privacy.js";
 import type { Decision, GroupDef, ModelGroup, Order, RawAnswer, SkipReason, TabInput, TabLike } from "./types.js";
@@ -48,6 +48,8 @@ export interface ClassifyArgs {
   groups: readonly GroupDef[];
   blocklist: readonly string[];
   threshold: number;
+  /** true: the strict rule (both answers >= threshold). false: best guess. */
+  strict: boolean;
   classifier: Classifier;
   cache: AnswerCache;
   concurrency?: number;
@@ -109,12 +111,12 @@ export async function classifyTabs(a: ClassifyArgs): Promise<ClassifyOutcome> {
     a.concurrency ?? CONCURRENCY,
     async ({ result, input }) => {
       try {
+        const rule = (fwd: RawAnswer, rev?: RawAnswer) => (a.strict ? decide(fwd, rev, modelGroups, a.threshold) : bestGuess(fwd, rev, modelGroups));
         const fwd = await ask(input, "fwd");
-        let d = decide(fwd, undefined, modelGroups, a.threshold);
+        let d = rule(fwd);
         if (d.reason === "needs-reverse") {
           metrics.reverseAsks++;
-          const rev = await ask(input, "rev");
-          d = decide(fwd, rev, modelGroups, a.threshold);
+          d = rule(fwd, await ask(input, "rev"));
         }
         result.decision = d;
       } catch (e) {

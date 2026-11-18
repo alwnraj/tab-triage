@@ -46,6 +46,9 @@ export interface RawAnswer {
 export type DecisionReason =
   | "domain"
   | "confident"
+  | "best-guess"
+  | "close-call"
+  | "same-site"
   | "order-agree"
   | "no-fit"
   | "low-prob"

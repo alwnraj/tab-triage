@@ -5,11 +5,14 @@ import { PRICE_USD_PER_INPUT_TOKEN } from "./config.js";
 import { classifyTabs, type RunMetrics, type TabResult } from "./pipeline.js";
 import { applyPlan, buildPlan, restoreSnapshot, type Snapshot, takeSnapshot } from "./plan.js";
 import { toTabInput } from "./privacy.js";
+import { siteGroups } from "./sites.js";
 import type { GroupDef } from "./types.js";
 
 export interface SortRequest {
   windowId: number;
   threshold: number;
+  /** true: only group tabs both answers are sure about (>= threshold). false: best guess. */
+  strict: boolean;
   collapse: boolean;
   groups: readonly GroupDef[];
   blocklist: readonly string[];
@@ -22,6 +25,8 @@ export interface SortReport {
   classifierId: string;
   mock: boolean;
   results: TabResult[];
+  /** Groups made on the fly for leftover tabs that share a site ("Wikipedia"), in addition to the user's. */
+  siteGroups?: GroupDef[];
   metrics: RunMetrics & { latencyMs: number; estCostUsd: number; sortedPct: number; movedTabs: number; staleTabs: number };
   at: number;
 }
@@ -52,9 +57,22 @@ export async function runSort(req: SortRequest, d: SortDeps): Promise<SortReport
     groups: req.groups,
     blocklist: req.blocklist,
     threshold: req.threshold,
+    strict: req.strict,
     classifier: d.classifier,
     cache: d.cache,
   });
+
+  // Leftovers that share a site with another leftover get a group named after it. Not for
+  // errors (a rejected tab stays put) and not for skipped tabs (pinned, blocklisted, …).
+  const leftovers = out.results.flatMap((r) =>
+    r.site && r.decision && !r.decision.groupId && r.decision.reason !== "error" ? [{ tabId: r.tabId, site: r.site, title: r.title }] : [],
+  );
+  // Strict mode keeps the old behaviour exactly: nothing moves unless the model is sure.
+  const extra = req.strict ? { groups: [] as GroupDef[], assign: new Map<number, string>() } : siteGroups(leftovers);
+  for (const r of out.results) {
+    const id = extra.assign.get(r.tabId);
+    if (id && r.decision) r.decision = { ...r.decision, groupId: id, reason: "same-site" };
+  }
 
   const finish = (ok: boolean, message: string | null, movedTabs: number, staleTabs: number): SortReport => {
     const latencyMs = now() - t0;
@@ -65,6 +83,7 @@ export async function runSort(req: SortRequest, d: SortDeps): Promise<SortReport
       classifierId: d.classifier.id,
       mock: d.classifier.isMock,
       results: out.results,
+      siteGroups: extra.groups,
       metrics: {
         ...out.metrics,
         latencyMs,
@@ -101,11 +120,11 @@ export async function runSort(req: SortRequest, d: SortDeps): Promise<SortReport
   // Snapshot the state as it is NOW (classification can take a while and the user may have
   // rearranged things meanwhile); this is what Undo returns to.
   const snap = await takeSnapshot(d.browser, req.windowId, now(), freshTabs);
-  const steps = buildPlan(choices, req.groups, snap.groups);
+  const steps = buildPlan(choices, [...req.groups, ...extra.groups], snap.groups);
   const moved = steps.reduce((n, s) => n + s.tabIds.length, 0);
   if (!moved) {
-    const extra = out.metrics.tabErrors ? ` ${out.metrics.tabErrors} tab(s) were rejected by the API and left alone.` : "";
-    return finish(true, ("Nothing passed the threshold, so no tabs were moved." + extra).trim(), 0, staleTabs);
+    const extraNote = out.metrics.tabErrors ? ` ${out.metrics.tabErrors} tab(s) were rejected by the API and left alone.` : "";
+    return finish(true, ("No tab fit a group, so no tabs were moved." + extraNote).trim(), 0, staleTabs);
   }
 
   await d.saveSnapshot(snap);

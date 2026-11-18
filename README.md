@@ -9,10 +9,13 @@ A Chrome extension that sorts the tabs in the current window into Chrome tab gro
 ## How it works
 
 1. Skip tabs that are pinned, already grouped, incognito, `chrome://`, local, or on the user's blocklist.
-2. Match the user's domain rules locally (e.g. `arxiv.org` → Research). No network call.
+2. Match domain rules locally (e.g. `arxiv.org` → Papers). The default groups ship with a few hundred well-known sites, so roughly half of a typical window never touches the network.
 3. For the rest, send one request per tab with two questions: a **Choice** (which group?) and a **Noul** (does any group fit at all?).
-4. Group the tab only if both probabilities are at least the threshold (default 0.8). If it's within 0.1 of the threshold, ask again with the options reversed and group it only if the answer doesn't change. This guards against the model favouring the first option.
-5. Classify every tab first, then move them. If anything fails, no tab moves. Undo restores the saved snapshot.
+4. **Best guess (default):** the tab goes to its most likely group unless the Noul says nothing fits (below 0.3). If the top two groups are within 0.1, ask again with the options reversed and average the two answers, which cancels the model's lean toward the first option listed. **Strict mode** (Options) instead moves a tab only if both answers are at least the threshold (default 0.8).
+5. Leftover tabs that share a site (two or more) are grouped under that site's name, e.g. "Wikipedia". No model call.
+6. Classify every tab first, then move them. If anything fails, no tab moves. Undo restores the saved snapshot.
+
+The default groups are specific on purpose (Docs & Reference, Code & Repos, Papers, Reading List, Headlines, Shopping, Recipes, Watch & Listen, Social, Work & Inbox, Trips, Learning), and users can rename, remove or add their own.
 
 Only the hostname and the first 120 characters of the title leave the browser. They go to a small hosted service (`proxy/`), which holds the [TypeSafe](https://docs.typesafe.ai) API key and forwards the request. It never logs or stores hostnames, titles or group descriptions; it keeps only hashed rate-limit counters. See the [privacy policy](https://tab-triage-pi.vercel.app/privacy).
 

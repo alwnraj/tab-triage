@@ -8,7 +8,7 @@ The extension sends `{v, site, title, groups: [{key, description}], order}` with
 
 | | |
 | - | - |
-| **Request shape** | Only the shape above: a hostname, a title (cut to 120 characters), 1–12 groups with lowercase keys and descriptions of at most 500 characters, and a body under 32 KB. Raw TypeSafe requests are refused. Callers still choose the title and group descriptions, so the endpoint is effectively a small free classifier: the caps below are what limit abuse. |
+| **Request shape** | Only the shape above: a hostname, a title (cut to 120 characters), 1–16 groups with lowercase keys and descriptions of at most 500 characters, and a body under 32 KB. Raw TypeSafe requests are refused. Callers still choose the title and group descriptions, so the endpoint is effectively a small free classifier: the caps below are what limit abuse. |
 | **Origin** | Web pages (an `http(s)` Origin) are refused. `ALLOWED_ORIGINS` restricts it to named extension ids. Browsers can't fake the Origin header but scripts can, so this keeps out other web pages and extensions, not a determined caller. |
 | **Rate limits** | Per install (default 240/min) and per IP, with IPv6 grouped by /64 (default 300/min). Needs Redis. |
 | **Daily caps** | A total (`DAILY_BUDGET_USD`, default $5) and a per-IP share (`PER_IP_DAILY_USD`, default 2% of the total), so one network can't pause the service for everyone. Each request reserves an estimate of its tokens up front, atomically, so parallel requests can't overshoot; the estimate is corrected after the answer. Needs Redis. |

@@ -14,7 +14,7 @@ declare const __RELEASE__: boolean | undefined;
 export const RELEASE: boolean = typeof __RELEASE__ === "boolean" && __RELEASE__;
 
 /** Limits the service enforces on each request (shared by the client and proxy/). */
-export const MAX_GROUPS = 12;
+export const MAX_GROUPS = 16;
 export const MAX_DESCRIPTION = 500;
 
 /** Bump when the wording of the questions changes; part of the cache key. */
@@ -23,6 +23,14 @@ export const PROMPT_VERSION = "p2";
 export const DEFAULT_THRESHOLD = 0.8;
 /** Band above the threshold where we double-check with reversed option order. */
 export const REASK_BAND = 0.1;
+
+/**
+ * Best-guess mode (the default): a tab goes to its most likely group unless the companion
+ * Noul says no group fits (below FIT_MIN, TypeSafe's suggested "no" cut-off). When the top
+ * two options are within CLOSE_CALL, both option orders are asked and averaged.
+ */
+export const FIT_MIN = 0.3;
+export const CLOSE_CALL = 0.1;
 
 export const TITLE_MAX = 120;
 export const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;

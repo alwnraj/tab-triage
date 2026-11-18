@@ -1,10 +1,10 @@
-# Chrome Web Store listing: tab-triage 1.0.1
+# Chrome Web Store listing: tab-triage 1.1.0
 
-Everything to paste into the [developer dashboard](https://chrome.google.com/webstore/devconsole), in the order the dashboard asks for it. The package is `release/tab-triage-1.0.1.zip` (`npm run package`). The images are in this folder (`npx tsx store/make-assets.ts` regenerates them from the latest real-classifier demo).
+Everything to paste into the [developer dashboard](https://chrome.google.com/webstore/devconsole), in the order the dashboard asks for it. The package is `release/tab-triage-1.1.0.zip` (`npm run package`). The images are in this folder (`npx tsx store/make-assets.ts` regenerates them from the latest real-classifier demo).
 
 ## Package tab
 
-Upload `release/tab-triage-1.0.1.zip`, **not** the `-download.zip`: that one carries a manifest `key` for the website install, and the store rejects it.
+Upload `release/tab-triage-1.1.0.zip`, **not** the `-download.zip`: that one carries a manifest `key` for the website install, and the store rejects it.
 
 ## Store listing tab
 
@@ -15,17 +15,18 @@ Upload `release/tab-triage-1.0.1.zip`, **not** the `-download.zip`: that one car
 
 **Description:**
 
-> Too many tabs? tab-triage sorts the tabs in your current window into real Chrome tab groups (Research, Code, News, Cooking, Shopping, or groups you define), but only the ones it's confident about.
+> Too many tabs? tab-triage sorts the tabs in your current window into real Chrome tab groups: Docs & Reference, Code & Repos, Papers, Reading List, Headlines, Shopping, Recipes, Watch & Listen, Social, Work & Inbox, Trips and Learning, or groups you define.
 >
 > HOW IT WORKS
 > • Click the toolbar icon and press Sort tabs.
 > • Each tab is classified by a calibrated model, which returns a real probability, not a guess dressed up as certainty.
-> • A tab is grouped only when the model is at least 80% sure which group it belongs in AND that the group really fits (you can change the threshold).
-> • Tabs it isn't sure about stay exactly where they are, and the popup tells you why ("Not sure which group · leaned Research").
+> • Each tab goes to the group it fits best. Known sites are matched on your device, and the rest are classified by a calibrated model.
+> • Tabs that fit nowhere stay exactly where they are, and leftover tabs from the same site are grouped together under the site's name.
+> • Prefer caution? Turn on "Only group tabs it's sure about" and set how sure it must be.
 > • Undo puts every tab back: order, groups, even the groups you made yourself.
 >
 > YOUR GROUPS
-> Describe each group in plain words on the Options page. Optional domain rules (for example arxiv.org → Research) are matched on your device and never sent anywhere.
+> Rename, remove or add groups on the Options page and describe each in plain words. Domain rules (for example arxiv.org → Papers) are matched on your device and never sent anywhere; the defaults cover a few hundred well-known sites.
 >
 > PRIVACY
 > • Nothing leaves your browser until you accept a one-screen consent and press Sort.

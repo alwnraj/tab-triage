@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "tab-triage",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "Sorts open tabs into your tab groups, only when a calibrated classifier is confident. Undo puts everything back.",
   "minimum_chrome_version": "116",
   "permissions": ["tabs", "tabGroups", "storage"],

@@ -64,7 +64,7 @@ function setup(failWith?: ClassifierError) {
     saveSnapshot: async (s: Snapshot) => void (saved = s),
     clearSnapshot: async () => void (saved = null),
   };
-  const req = { windowId: W, threshold: 0.8, collapse: true, groups: GROUPS, blocklist: [] };
+  const req = { windowId: W, threshold: 0.8, strict: true, collapse: true, groups: GROUPS, blocklist: [] };
   return { b, classifier, kv, deps, req, saved: () => saved as Snapshot | null };
 }
 
@@ -101,6 +101,7 @@ describe("classifyTabs", () => {
       groups: [{ ...GROUPS[0]!, description: "" }],
       blocklist: [],
       threshold: 0.8,
+      strict: true,
       classifier,
       cache: deps.cache,
     });
@@ -220,7 +221,7 @@ describe("undo edge cases", () => {
     const before = b.look();
     let saved: Snapshot | null = null;
     const rep = await runSort(
-      { windowId: W, threshold: 0.8, collapse: true, groups: GROUPS, blocklist: [] },
+      { windowId: W, threshold: 0.8, strict: true, collapse: true, groups: GROUPS, blocklist: [] },
       {
         browser: b,
         classifier: new Scripted(TABLE),

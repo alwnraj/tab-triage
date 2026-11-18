@@ -41,7 +41,7 @@
       <p class="muted">The description is the classification criterion, written in plain language. Domains (optional, comma-separated) are matched locally first; a group with domains and no description is never sent to the API.</p>
       <div id="groups"></div>
       <button id="add-group">Add group</button>
-      <span id="group-limit" class="muted hidden">Up to 12 groups.</span>
+      <span id="group-limit" class="muted hidden">Up to 16 groups.</span>
     </section>
 
 
@@ -52,8 +52,10 @@
     </section>
 
     <section class="card">
-      <h2>Confidence threshold</h2>
-      <p class="muted">A tab is grouped only when the model is at least this sure, both about which group and that the group really fits. Higher means fewer tabs grouped, with fewer mistakes. Tabs below it are left where they are.</p>
+      <h2>How sure it has to be</h2>
+      <label><input id="strict" type="checkbox"> <strong>Only group tabs it's sure about</strong></label>
+      <p class="muted">Off (the default): every tab goes to its best-fitting group unless none fits at all, and leftover tabs from the same site are grouped together. On: a tab moves only if the model is at least as sure as the threshold below, and the rest stay where they are.</p>
+      <p class="muted">Threshold for "sure" (used when the box above is on):</p>
       <div class="row threshold">
         <input id="threshold" type="range" min="0.5" max="0.95" step="0.05" aria-label="Confidence threshold">
         <output id="threshold-value"></output>

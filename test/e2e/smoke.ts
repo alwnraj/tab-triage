@@ -17,6 +17,7 @@ const PAGES: Array<[string, string]> = [
   ["https://arxiv.org/abs/1706.03762", "Attention Is All You Need"],
   ["https://github.com/microsoft/playwright", "GitHub - microsoft/playwright: source code repositories"],
   ["https://misc.example.com/zzz", "Qwerty zxcv"],
+  ["https://misc.example.com/yyy", "Asdf lkjh"],
 ];
 
 const { ctx, sw, extId, profileDir } = await launchWithExtension({ headless: true });
@@ -80,9 +81,11 @@ try {
     return after.groups.find((g) => g.id === t?.groupId)?.title ?? null;
   };
   console.log("groups:", after.groups.map((g) => `${g.title}/${g.color}`).join(", "));
-  assert.equal(groupOf("Attention Is All You Need"), "Research", "domain rule → Research");
-  assert.equal(groupOf("Easy pasta"), "Cooking");
-  assert.equal(groupOf("Qwerty"), null, "nonsense tab stays ungrouped");
+  assert.equal(groupOf("Attention Is All You Need"), "Papers", "domain rule → Papers");
+  assert.equal(groupOf("Easy pasta"), "Recipes");
+  // Two tabs nothing fits, from the same site, are grouped together under the site's name.
+  assert.equal(groupOf("Qwerty"), "Example", "leftovers from one site share a group");
+  assert.equal(groupOf("Asdf"), "Example");
   // Grouped tabs must be contiguous in the strip (Chrome invariant).
   for (const g of after.groups) {
     const idx = after.tabs.filter((t) => t.groupId === g.id).map((t) => t.index);

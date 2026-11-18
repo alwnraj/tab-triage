@@ -17,6 +17,9 @@ let clickError: string | null = null;
 const REASON: Record<DecisionReason, string> = {
   domain: "domain rule",
   confident: "confident",
+  "best-guess": "best guess",
+  "close-call": "close call, checked twice",
+  "same-site": "same site",
   "order-agree": "confirmed on a second ask",
   "no-fit": "doesn't fit any group well",
   "low-prob": "not sure which group",
@@ -46,12 +49,15 @@ function showMessage(text: string | null, kind: "warn" | "err" = "warn") {
 
 const pct = (p: number) => `${Math.round(p * 100)}%`;
 
+/** The user's groups plus the same-site groups made for the last sort. */
+let shownGroups: GroupDef[] = [];
+
 function row(r: TabResult): HTMLLIElement {
   const d = r.decision!;
-  const g = groups.find((x) => x.id === (d.groupId ?? d.leaningGroupId));
+  const g = shownGroups.find((x) => x.id === (d.groupId ?? d.leaningGroupId));
   const li = el("li", d.groupId ? "grouped" : "ungrouped");
   li.append(el("span", "title", r.title || r.site || "(untitled)"));
-  li.append(el("span", "prob", d.reason === "domain" ? "rule" : d.reason === "error" ? "—" : pct(d.probability)));
+  li.append(el("span", "prob", d.reason === "domain" ? "rule" : d.reason === "same-site" ? "site" : d.reason === "error" ? "—" : pct(d.probability)));
   const where = el("span", "where");
   if (d.groupId && g) {
     const dot = el("span", `dot c-${g.color}`);
@@ -76,6 +82,7 @@ function render(report: SortReport | null) {
   summary.classList.toggle("hidden", !report);
   mockTag.classList.toggle("hidden", !report?.mock);
   if (!report) return;
+  shownGroups = [...groups, ...(report.siteGroups ?? [])];
   const decided = report.results.filter((r) => r.decision);
   const grouped = decided.filter((r) => r.decision!.groupId);
   const loose = decided.filter((r) => !r.decision!.groupId);
