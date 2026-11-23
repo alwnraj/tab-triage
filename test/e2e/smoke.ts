@@ -132,7 +132,7 @@ try {
     const t = (globalThis as { tabTriage?: { handle(m: unknown): Promise<unknown> } }).tabTriage!;
     await t.handle({ type: "sort", windowId: wid, threshold: 0.8 });
   }, windowId);
-  await popup.waitForFunction(() => !(document.getElementById("message")?.textContent ?? "").includes("Undone") && !!document.querySelector("#summary .chip"), null, { timeout: 10_000 });
+  await popup.waitForFunction(() => !(document.getElementById("message")?.textContent ?? "").includes("Undone") && !!document.getElementById("count")?.textContent, null, { timeout: 10_000 });
   assert.equal(await popup.isEnabled("#undo"), true, "popup picked up the new run");
   await sw.evaluate(async (wid) => {
     const t = (globalThis as { tabTriage?: { handle(m: unknown): Promise<unknown> } }).tabTriage!;

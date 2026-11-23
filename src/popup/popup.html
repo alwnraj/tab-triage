@@ -4,33 +4,41 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>tab-triage</title>
-  <link rel="stylesheet" href="common.css">
   <link rel="stylesheet" href="popup.css">
 </head>
 <body>
   <main>
     <section id="consent" class="banner warn hidden">
-      Before the first sort, review what gets sent to the classifier.
-      <button id="open-consent">Review and accept</button>
+      <p>Before the first sort, review what gets sent to the classifier.</p>
+      <button id="open-consent" class="pill" type="button">Review and accept</button>
     </section>
 
-    <section class="actions">
-      <button id="sort" class="tile primary">Sort tabs</button>
-      <button id="undo" class="tile" disabled aria-label="Undo the last sort">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>
-        Undo
+    <div class="bar">
+      <button id="sort" class="sort" type="button">
+        <span id="sort-label">Sort tabs</span>
+        <span class="dots" aria-hidden="true"><i></i><i></i><i></i></span>
       </button>
-      <button id="options" class="tile icon" aria-label="Options" title="Options">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>
-      </button>
-    </section>
+      <div class="split">
+        <button id="undo" class="half" type="button" disabled aria-label="Undo the last sort">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>
+          <span>Undo</span>
+        </button>
+        <button id="options" class="half icon" type="button" aria-label="Options" title="Options">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>
+        </button>
+      </div>
+    </div>
 
     <div id="message" class="banner hidden" role="status" aria-live="polite"></div>
 
-    <section id="summary" class="summary hidden"></section>
-    <p id="mock" class="mock-tag hidden">MOCK · keyword rehearsal, not the model</p>
-    <ol id="results" aria-label="Results"></ol>
+    <p id="hint" class="hint">Sorts the tabs in this window.</p>
 
+    <section id="summary" class="summary hidden" aria-label="Last sort">
+      <p class="count"><span id="count"></span><span id="mock" class="tag hidden">MOCK</span></p>
+      <button id="mode" class="mode" type="button"></button>
+    </section>
+
+    <div id="results" class="results" aria-label="Results"></div>
   </main>
   <script src="popup.js" type="module"></script>
 </body>
