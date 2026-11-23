@@ -4,7 +4,7 @@ A Chrome extension that sorts the tabs in the current window into Chrome tab gro
 
 ![tab-triage sorting tabs into groups, then undoing it](demo/demo.gif)
 
-**Install:** [tab-triage-pi.vercel.app/install](https://tab-triage-pi.vercel.app/install). No account or API key needed.
+**Install:** [Chrome Web Store](https://chromewebstore.google.com/detail/dmiokhpadbbfpkoiffnkolamighgkibn), or from a zip at [tab-triage-pi.vercel.app/install](https://tab-triage-pi.vercel.app/install). No account or API key needed.
 
 ## How it works
 
