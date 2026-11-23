@@ -16,7 +16,7 @@
     <p id="not-chrome" class="note" hidden>This browser doesn't look like Chrome or another Chromium browser. tab-triage needs one of those.</p>
 
     <a class="button" id="download" href="/download/tab-triage.zip" download>Download tab-triage (zip)</a>
-    <p class="muted">Version <span id="version">1.0</span>. Chrome only lets the Web Store install extensions automatically, so for now there are four short steps. A Chrome Web Store version is on its way.</p>
+    <p class="muted"><span id="version-label" hidden>Version <span id="version"></span>. </span>Chrome only lets the Web Store install extensions automatically, so for now there are four short steps. A Chrome Web Store version is on its way.</p>
 
     <ol class="steps">
       <li>
@@ -63,7 +63,7 @@
         e.target.textContent = "Select and copy it";
       }
     });
-    fetch("/download/version.json").then((r) => r.json()).then((v) => (document.getElementById("version").textContent = v.version)).catch(() => {});
+    fetch("/download/version.json").then((r) => r.json()).then((v) => (document.getElementById("version").textContent = v.version, document.getElementById("version-label").hidden = false)).catch(() => {});
   </script>
 </body>
 </html>
