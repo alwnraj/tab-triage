@@ -51,6 +51,28 @@ Options → Mock mode switches to a keyword matcher, so no API calls are made (d
 
 Dev builds call the production service, so they spend real budget (use Mock mode while iterating). Once `ALLOWED_ORIGINS` is set on the service, an unpacked `dist/` has a different extension id and gets 403s. To point the extension at a local or staging service instead, build with `TAB_TRIAGE_SERVICE=http://localhost:8787 npm run build`. Running the service locally is covered in [proxy/README.md](proxy/README.md).
 
+## Use your own TypeSafe API key
+
+The released extension calls the hosted service, which holds the author's key. To run on your own key instead, run the small service locally and build the extension against it. Get a key from [TypeSafe](https://docs.typesafe.ai), then:
+
+```bash
+echo "TYPESAFE_API_KEY=your-key" > .env
+```
+
+```bash
+node scripts/build-proxy.mjs
+```
+
+```bash
+node --env-file-if-exists=.env scripts/serve-proxy.mjs
+```
+
+```bash
+TAB_TRIAGE_SERVICE=http://localhost:8787 npm run build
+```
+
+Load `dist/` in Chrome and leave Mock mode off. The key stays on your machine and `.env` is gitignored. To host it for yourself, see [proxy/README.md](proxy/README.md).
+
 ## Scripts that call TypeSafe directly
 
 These read `TYPESAFE_API_KEY` from the environment or a gitignored `.env`.
