@@ -67,7 +67,7 @@
 
 * { box-sizing: border-box; }
 body { width: 360px; max-height: 600px; margin: 0; background: var(--bg); color: var(--ink); font: 400 14px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
-main { display: flex; flex-direction: column; max-height: 600px; padding: 8px; }
+main { display: flex; flex-direction: column; max-height: 600px; padding: 6px; }
 button { font: inherit; color: inherit; cursor: pointer; }
 button:disabled { cursor: default; }
 button:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
@@ -76,10 +76,10 @@ p { margin: 0; }
 svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
 /* ---------- Top bar: Sort, and Undo + Options as one split button ---------- */
-.bar { display: grid; grid-template-columns: 1fr auto; gap: 6px; flex: none; }
+.bar { display: grid; grid-template-columns: 1fr auto; gap: 4px; flex: none; }
 .sort {
   display: flex; align-items: center; justify-content: space-between; gap: 12px;
-  height: 38px; padding: 0 12px; border: 0; border-radius: 6px;
+  height: 34px; padding: 0 10px; border: 0; border-radius: 6px;
   background: var(--sort-bg); color: var(--sort-fg); font-size: 14.5px; font-weight: 700;
   transition: background 0.12s, transform 0.06s;
 }
@@ -92,27 +92,27 @@ svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; 
 .dots i:nth-child(2) { background: var(--dot-b); }
 .dots i:nth-child(3) { background: var(--dot-c); }
 
-.split { display: flex; height: 38px; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; background: var(--bg); }
-.half { display: inline-flex; align-items: center; justify-content: center; gap: 5px; height: 100%; padding: 0 10px; border: 0; background: none; font-size: 14px; font-weight: 500; }
+.split { display: flex; height: 34px; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; background: var(--bg); }
+.half { display: inline-flex; align-items: center; justify-content: center; gap: 4px; height: 100%; padding: 0 8px; border: 0; background: none; font-size: 14px; font-weight: 500; }
 .half + .half { border-left: 1px solid var(--border); }
 .half svg { width: 18px; height: 18px; flex: none; }
-.half.icon { width: 38px; padding: 0; color: var(--muted); }
+.half.icon { width: 34px; padding: 0; color: var(--muted); }
 .half:hover:not(:disabled) { background: var(--hover); }
 .half:disabled { color: var(--muted); opacity: 0.55; }
 .half:focus-visible { outline-offset: -3px; }
 
 /* ---------- Banners and hint ---------- */
-.banner { flex: none; margin-top: 6px; padding: 7px 10px; border-radius: 6px; font-size: 13px; }
-#consent { margin: 0 0 6px; }
+.banner { flex: none; margin-top: 4px; padding: 5px 8px; border-radius: 6px; font-size: 13px; }
+#consent { margin: 0 0 4px; }
 .banner.warn { background: var(--warn-bg); color: var(--warn-fg); }
 .banner.err { background: var(--err-bg); color: var(--err-fg); }
-.banner .pill { margin-top: 6px; padding: 4px 12px; border: 1.5px solid currentColor; border-radius: 6px; background: none; font-size: 13px; font-weight: 700; }
-.hint { flex: none; margin-top: 6px; color: var(--muted); font-size: 13px; }
+.banner .pill { margin-top: 4px; padding: 3px 10px; border: 1.5px solid currentColor; border-radius: 6px; background: none; font-size: 13px; font-weight: 700; }
+.hint { flex: none; margin-top: 4px; color: var(--muted); font-size: 13px; }
 
 /* ---------- Summary ---------- */
 .summary {
   flex: none; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 12px;
-  margin: 6px -8px 0; padding: 0 12px 6px; border-bottom: 1px solid var(--line);
+  margin: 4px -6px 0; padding: 0 10px 4px; border-bottom: 1px solid var(--line);
 }
 .count { color: var(--muted); font-size: 13px; }
 .count b { color: var(--ink); font-weight: 600; }
@@ -121,17 +121,17 @@ svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; 
 .mode:hover { color: var(--ink); }
 
 /* ---------- Results ---------- */
-.results { flex: 1 1 auto; min-height: 0; overflow-y: auto; margin: 0 -8px; padding: 0 12px 2px; }
+.results { flex: 1 1 auto; min-height: 0; overflow-y: auto; margin: 0 -6px; padding: 0 10px 2px; }
 .results:empty { display: none; }
-.results h3 { margin: 8px 0 0; color: var(--muted); font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; }
+.results h3 { margin: 6px 0 0; color: var(--muted); font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; }
 .results ol { list-style: none; margin: 0; padding: 0; }
-.results li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 1px 10px; padding: 5px 0; }
+.results li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0 8px; padding: 3px 0; }
 .title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; font-weight: 500; }
 .pct { align-self: baseline; font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; }
 .pct.soft { color: var(--muted); font-weight: 400; }
 .meta { grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; min-width: 0; color: var(--muted); font-size: 12.5px; }
 .meta span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.more { margin: 0; padding: 3px 0; border: 0; background: none; color: var(--muted); font-size: 13px; }
+.more { margin: 0; padding: 2px 0; border: 0; background: none; color: var(--muted); font-size: 13px; }
 .more:hover { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
 
 /* A group chip, in the tab group's own colour. Dashed = the tab was left alone but leaned this way. */
