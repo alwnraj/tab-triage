@@ -79,7 +79,7 @@ svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; 
 .bar { display: grid; grid-template-columns: 1fr auto; gap: 6px; flex: none; }
 .sort {
   display: flex; align-items: center; justify-content: space-between; gap: 12px;
-  height: 38px; padding: 0 12px; border: 0; border-radius: 14px;
+  height: 38px; padding: 0 12px; border: 0; border-radius: 6px;
   background: var(--sort-bg); color: var(--sort-fg); font-size: 14.5px; font-weight: 700;
   transition: background 0.12s, transform 0.06s;
 }
@@ -92,7 +92,7 @@ svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; 
 .dots i:nth-child(2) { background: var(--dot-b); }
 .dots i:nth-child(3) { background: var(--dot-c); }
 
-.split { display: flex; height: 38px; border: 1px solid var(--border); border-radius: 14px; overflow: hidden; background: var(--bg); }
+.split { display: flex; height: 38px; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; background: var(--bg); }
 .half { display: inline-flex; align-items: center; justify-content: center; gap: 5px; height: 100%; padding: 0 10px; border: 0; background: none; font-size: 14px; font-weight: 500; }
 .half + .half { border-left: 1px solid var(--border); }
 .half svg { width: 18px; height: 18px; flex: none; }
@@ -102,11 +102,11 @@ svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; 
 .half:focus-visible { outline-offset: -3px; }
 
 /* ---------- Banners and hint ---------- */
-.banner { flex: none; margin-top: 6px; padding: 7px 10px; border-radius: 12px; font-size: 13px; }
+.banner { flex: none; margin-top: 6px; padding: 7px 10px; border-radius: 6px; font-size: 13px; }
 #consent { margin: 0 0 6px; }
 .banner.warn { background: var(--warn-bg); color: var(--warn-fg); }
 .banner.err { background: var(--err-bg); color: var(--err-fg); }
-.banner .pill { margin-top: 6px; padding: 4px 12px; border: 1.5px solid currentColor; border-radius: 999px; background: none; font-size: 13px; font-weight: 700; }
+.banner .pill { margin-top: 6px; padding: 4px 12px; border: 1.5px solid currentColor; border-radius: 6px; background: none; font-size: 13px; font-weight: 700; }
 .hint { flex: none; margin-top: 6px; color: var(--muted); font-size: 13px; }
 
 /* ---------- Summary ---------- */
@@ -116,7 +116,7 @@ svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; 
 }
 .count { color: var(--muted); font-size: 13px; }
 .count b { color: var(--ink); font-weight: 600; }
-.tag { display: inline-block; margin-left: 8px; padding: 1px 8px; border-radius: 999px; background: var(--tag-bg); color: var(--tag-fg); font-size: 11px; font-weight: 700; letter-spacing: 0.06em; vertical-align: 1px; }
+.tag { display: inline-block; margin-left: 8px; padding: 1px 8px; border-radius: 4px; background: var(--tag-bg); color: var(--tag-fg); font-size: 11px; font-weight: 700; letter-spacing: 0.06em; vertical-align: 1px; }
 .mode { padding: 2px 0; border: 0; background: none; color: var(--muted); font-size: 13px; text-decoration: underline; text-underline-offset: 3px; }
 .mode:hover { color: var(--ink); }
 
@@ -135,7 +135,7 @@ svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; 
 .more:hover { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
 
 /* A group chip, in the tab group's own colour. Dashed = the tab was left alone but leaned this way. */
-.chip { flex: none; padding: 1px 10px; border-radius: 8px; background: var(--c-bg); color: var(--c-fg); font-size: 12.5px; font-weight: 500; line-height: 1.5; }
+.chip { flex: none; padding: 1px 10px; border-radius: 4px; background: var(--c-bg); color: var(--c-fg); font-size: 12.5px; font-weight: 500; line-height: 1.5; }
 .chip.lean { background: none; color: var(--muted); border: 1px dashed var(--c-fg); padding: 0 9px; }
 .c-grey { --c-bg: var(--c-grey-bg); --c-fg: var(--c-grey-fg); }
 .c-blue { --c-bg: var(--c-blue-bg); --c-fg: var(--c-blue-fg); }
