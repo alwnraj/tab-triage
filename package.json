@@ -1,6 +1,6 @@
 {
   "name": "tab-triage",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "private": true,
   "description": "Chrome extension that sorts open tabs into native tab groups using calibrated decisions.",
   "license": "MIT",
