@@ -72,3 +72,65 @@ li { margin: 6px 0; }
 }
 .note { background: var(--code); border-radius: 6px; padding: 10px 14px; }
 .foot { margin-top: 48px; padding-top: 20px; border-top: 1px solid var(--line); }
+
+/* ---------- "What leaves your browser" animation (CSS only, 14 s loop) ---------- */
+.flow { margin-top: 44px; padding-top: 28px; border-top: 1px solid var(--line); }
+.flow h2 { margin-top: 0; font-size: 22px; }
+.stage { display: grid; grid-template-columns: minmax(0, 1fr) 36px minmax(0, 1fr); align-items: stretch; margin: 18px 0 10px; }
+.box { border: 1px solid var(--border); border-radius: 6px; padding: 12px 14px; background: var(--bg); min-width: 0; }
+.label { margin: 0 0 8px; color: var(--muted); font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; }
+.tabcard p { margin: 0; }
+.url { font: 13px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; word-break: break-all; }
+.u-scheme, .u-rest { color: var(--muted); }
+.keep { border-radius: 3px; }
+.ttl { margin-top: 8px !important; font-weight: 600; }
+.skel { display: grid; gap: 6px; margin: 12px 0; }
+.skel i { display: block; height: 8px; border-radius: 4px; background: var(--line); }
+.skel i:nth-child(2) { width: 85%; } .skel i:nth-child(3) { width: 60%; }
+.never-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.never-chips span { padding: 1px 8px; border: 1px dashed var(--border); border-radius: 4px; color: var(--muted); font-size: 12px; }
+.link { position: relative; }
+.link i { position: absolute; left: 50%; top: 50%; width: 20px; height: 2px; margin: -1px 0 0 -10px; background: var(--border); }
+.link i::after { content: ""; position: absolute; right: -1px; top: -4px; border: 5px solid transparent; border-left: 7px solid var(--border); border-right: 0; }
+.req { list-style: none; margin: 0; padding: 0; font-size: 14px; }
+.req li { margin: 0 0 6px; }
+.req span { display: inline-block; min-width: 84px; color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; }
+.resp { margin-top: 12px; padding-top: 10px; border-top: 1px dashed var(--border); }
+.bar { display: grid; grid-template-columns: 124px minmax(0, 1fr) 36px; align-items: center; gap: 8px; margin: 0 0 4px; font-size: 13px; }
+.bar b { display: block; height: 8px; border-radius: 4px; background: var(--pick); width: var(--w); }
+.bar em { font-style: normal; color: var(--muted); text-align: right; font-variant-numeric: tabular-nums; }
+.caps { position: relative; min-height: 4.8em; margin: 6px 0 10px; }
+.cap { margin: 0 0 6px; font-size: 16px; }
+@media (max-width: 680px) {
+  .stage { grid-template-columns: 1fr; }
+  .link { height: 28px; }
+  .bar { grid-template-columns: 104px minmax(0, 1fr) 36px; }
+  .caps { min-height: 7.2em; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .cap { position: absolute; inset: 0 0 auto 0; margin: 0; opacity: 0; animation: 14s linear infinite both; }
+  .c1 { animation-name: cap1; } .c2 { animation-name: cap2; } .c3 { animation-name: cap3; } .c4 { animation-name: cap4; }
+  .u-rest, .skel, .never-chips { animation: 14s linear infinite both; }
+  .u-rest { animation-name: drop-text; } .skel, .never-chips { animation-name: drop; }
+  .keep { animation: 14s linear infinite both keep; }
+  .link i { animation: 14s linear infinite both pulse; }
+  .req li { opacity: 0; animation: 14s linear infinite both req; }
+  .req li:nth-child(2) { animation-delay: 0.15s; } .req li:nth-child(3) { animation-delay: 0.3s; } .req li:nth-child(4) { animation-delay: 0.45s; }
+  .resp { opacity: 0; animation: 14s linear infinite both resp; }
+  .bar b { transform-origin: left; animation: 14s linear infinite both grow; }
+  @keyframes cap1 { 0% { opacity: 0 } 3%, 21% { opacity: 1 } 24%, 100% { opacity: 0 } }
+  @keyframes cap2 { 0%, 24% { opacity: 0 } 27%, 45% { opacity: 1 } 48%, 100% { opacity: 0 } }
+  @keyframes cap3 { 0%, 48% { opacity: 0 } 51%, 69% { opacity: 1 } 72%, 100% { opacity: 0 } }
+  @keyframes cap4 { 0%, 72% { opacity: 0 } 75%, 94% { opacity: 1 } 97%, 100% { opacity: 0 } }
+  @keyframes drop { 0%, 25% { opacity: 1 } 31%, 94% { opacity: 0.18 } 100% { opacity: 1 } }
+  @keyframes drop-text { 0%, 25% { opacity: 1; text-decoration: none } 31%, 94% { opacity: 0.35; text-decoration: line-through } 99% { opacity: 0.35; text-decoration: line-through } 100% { opacity: 1; text-decoration: none } }
+  @keyframes keep { 0%, 25% { background: transparent } 31%, 94% { background: var(--pick) } 100% { background: transparent } }
+  @keyframes pulse { 0%, 47% { background: var(--border) } 52%, 62% { background: var(--link) } 68%, 100% { background: var(--border) } }
+  @keyframes req { 0%, 49% { opacity: 0; transform: translateX(-14px) } 55%, 94% { opacity: 1; transform: none } 98%, 100% { opacity: 0; transform: none } }
+  @keyframes resp { 0%, 71% { opacity: 0 } 75%, 94% { opacity: 1 } 98%, 100% { opacity: 0 } }
+  @keyframes grow { 0%, 72% { transform: scaleX(0) } 82%, 100% { transform: scaleX(1) } }
+}
+@media (prefers-reduced-motion: reduce) {
+  .u-rest, .skel, .never-chips { opacity: 0.4; } .u-rest { text-decoration: line-through; }
+  .keep { background: var(--pick); }
+}

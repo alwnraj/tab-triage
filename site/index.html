@@ -37,6 +37,50 @@
       <li><h2>Yours</h2><p>Twelve default groups you can edit. Prefer it cautious? Strict mode only groups tabs it is at least 80% sure about. Open source, MIT.</p></li>
     </ul>
 
+
+    <section class="flow" aria-labelledby="flow-title">
+      <h2 id="flow-title">What leaves your browser</h2>
+      <p class="muted">Only when you press <strong>Sort tabs</strong>. Here is one tab, followed through.</p>
+
+      <div class="stage">
+        <div class="box you">
+          <p class="label">In your browser</p>
+          <div class="tabcard">
+            <p class="url"><span class="u-scheme">https://</span><span class="u-host keep">en.wikipedia.org</span><span class="u-rest">/wiki/Calibration_(statistics)?utm_source=newsletter#History</span></p>
+            <p class="ttl keep">Calibration (statistics) – Wikipedia</p>
+            <div class="skel"><i></i><i></i><i></i></div>
+            <p class="never-chips"><span>page content</span><span>cookies</span><span>history</span></p>
+          </div>
+        </div>
+
+        <div class="link" aria-hidden="true"><i></i></div>
+
+        <div class="box svc">
+          <p class="label">tab-triage service, then the model</p>
+          <ul class="req">
+            <li><span>site</span> en.wikipedia.org</li>
+            <li><span>title</span> Calibration (statistics) – Wikipedia</li>
+            <li><span>your groups</span> Docs &amp; Reference, Papers, Recipes…</li>
+            <li><span>install id</span> random, not linked to you</li>
+          </ul>
+          <div class="resp">
+            <p class="label">The model answers with probabilities</p>
+            <p class="bar"><span>Docs &amp; Reference</span><b style="--w:94%"></b><em>94%</em></p>
+            <p class="bar"><span>Papers</span><b style="--w:4%"></b><em>4%</em></p>
+            <p class="bar"><span>Recipes</span><b style="--w:1%"></b><em>1%</em></p>
+          </div>
+        </div>
+      </div>
+
+      <div class="caps" aria-live="off">
+        <p class="cap c1"><b>1.</b> A tab is open. It has a full address, a title and a page behind it.</p>
+        <p class="cap c2"><b>2.</b> Only the site name and the title are kept. The path, query, page content, cookies and history stay on your device.</p>
+        <p class="cap c3"><b>3.</b> Those, plus your group names, go to the service. It does not store or log them.</p>
+        <p class="cap c4"><b>4.</b> The model replies with numbers. Your browser does the grouping. Example tab; numbers are illustrative.</p>
+      </div>
+      <p class="muted">Not sent at all: pinned, incognito, <code>chrome://</code>, local or blocklisted tabs. Read the <a href="/privacy">full privacy policy</a>.</p>
+    </section>
+
     <p class="muted foot">Not on the Web Store? <a href="/install">Install from a zip</a>. Want to run it on your own TypeSafe key? See the <a href="https://github.com/alwnraj/tab-triage#use-your-own-typesafe-api-key">README</a>. This site also hosts the small service the extension calls (<code>/api/classify</code>), which forwards a tab's hostname and title to TypeSafe and stores neither.</p>
   </main>
 </body>
