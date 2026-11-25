@@ -18,7 +18,7 @@ export async function titleCard(page: Page, path: string, mode: string) {
     `<div style="height:100%;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:28px">
       <div style="display:flex;gap:14px">${["#1a73e8", "#188038", "#fa903e", "#d93025", "#a142f4"].map((c) => `<div style="width:90px;height:18px;border-radius:9px;background:${c}"></div>`).join("")}</div>
       <div style="font-size:112px;font-weight:800;letter-spacing:-2px">tab-triage</div>
-      <div style="font-size:40px;color:#bdc1c6">Sorts tabs into groups, only when a calibrated model is confident.</div>
+      <div style="font-size:40px;color:#bdc1c6">Sort your tabs into groups in one click. Undo puts them back.</div>
       <div style="font-size:28px;color:#9aa0a6;margin-top:16px">Real extension · real Chromium tab strip · ${esc(mode)}</div>
     </div>`,
     path,

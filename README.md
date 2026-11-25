@@ -1,6 +1,6 @@
 # tab-triage
 
-A Chrome extension that sorts the tabs in the current window into Chrome tab groups. It only moves a tab when the classifier is confident; the rest stay where they are. **Undo** puts everything back.
+A Chrome extension that sorts the tabs in the current window into Chrome tab groups. Domain rules group the sites you know, a classifier picks the best-fitting group for the rest, and a tab stays where it is when nothing fits. **Undo** puts everything back.
 
 ![tab-triage sorting tabs into groups, then undoing it](demo/demo.gif)
 

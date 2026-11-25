@@ -79,6 +79,13 @@ if (RECORD && mac) {
 const urls = (JSON.parse(readFileSync("demo/urls.json", "utf8")) as { tabs: Array<{ url: string }> }).tabs.map((t) => t.url);
 console.log(`[demo] building extension…`);
 run("node", ["scripts/build.mjs"]);
+// The hosted service only accepts the website download's pinned extension id, so give this
+// throwaway build the same public key. dist/ is rebuilt without it by the next `npm run build`.
+if (!MOCK) {
+  const { key } = JSON.parse(readFileSync("scripts/download-key.json", "utf8")) as { key: string };
+  const mf = JSON.parse(readFileSync("dist/manifest.json", "utf8")) as Record<string, unknown>;
+  writeFileSync("dist/manifest.json", JSON.stringify({ ...mf, key }, null, 2) + "\n");
+}
 
 // A run killed with SIGKILL or a crash can't clean up after itself, and chrome.storage's
 // remove() is only a logical delete, so sweep profiles left by earlier runs.
