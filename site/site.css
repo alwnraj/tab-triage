@@ -99,7 +99,7 @@ li { margin: 6px 0; }
 .bar { display: grid; grid-template-columns: 124px minmax(0, 1fr) 36px; align-items: center; gap: 8px; margin: 0 0 4px; font-size: 13px; }
 .bar b { display: block; height: 8px; border-radius: 4px; background: var(--pick); width: var(--w); }
 .bar em { font-style: normal; color: var(--muted); text-align: right; font-variant-numeric: tabular-nums; }
-.caps { position: relative; min-height: 4.8em; margin: 6px 0 10px; }
+.caps { position: relative; min-height: 4.8em; margin: 16px 0 10px; }
 .cap { margin: 0 0 6px; font-size: 16px; }
 @media (max-width: 680px) {
   .stage { grid-template-columns: 1fr; }
