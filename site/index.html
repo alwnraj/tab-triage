@@ -4,21 +4,40 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>tab-triage</title>
-  <meta name="description" content="A Chrome extension that sorts your tabs into tab groups, only when a calibrated classifier is confident.">
+  <meta name="description" content="A Chrome extension that sorts your open tabs into tab groups in one click. Undo puts everything back.">
   <link rel="stylesheet" href="/site.css">
 </head>
 <body>
   <main>
-    <h1>tab-triage</h1>
-    <p class="lead">Sorts your open tabs into Chrome tab groups, but only the ones a calibrated classifier is confident about. Tabs it isn't sure of stay where they are. <strong>Undo</strong> puts everything back.</p>
-    <p>No account and no API key: install it, accept the one-screen consent, press <strong>Sort tabs</strong>.</p>
-    <a class="button" href="https://chromewebstore.google.com/detail/dmiokhpadbbfpkoiffnkolamighgkibn">Add to Chrome</a>
-    <ul class="links">
-      <li><a href="/install">Install without the Web Store</a></li>
-      <li><a href="https://github.com/alwnraj/tab-triage">Source code and demo</a></li>
-      <li><a href="/privacy">Privacy policy</a></li>
+    <nav class="nav">
+      <a class="brand" href="/"><i></i><i></i><i></i>tab-triage</a>
+      <div><a href="/install">Install</a><a href="/privacy">Privacy</a><a href="https://github.com/alwnraj/tab-triage">GitHub</a></div>
+    </nav>
+
+    <div class="hero">
+      <div>
+        <h1>Sort your tabs into groups in one click.</h1>
+        <p class="lead">tab-triage files your open tabs into Chrome tab groups. <strong>Undo</strong> puts everything back exactly as it was.</p>
+        <p>Sites you know are grouped by built-in domain rules. For the rest it picks the best-fitting group, checks close calls twice, and leaves a tab alone when nothing fits.</p>
+        <p>
+          <a class="button" href="https://chromewebstore.google.com/detail/dmiokhpadbbfpkoiffnkolamighgkibn">Add to Chrome</a>
+          <a class="button ghost" href="https://github.com/alwnraj/tab-triage">View source</a>
+        </p>
+        <p class="muted">Free. No account and no API key.</p>
+      </div>
+      <figure class="shot">
+        <img class="light" src="/img/popup-light.png" width="360" height="284" alt="The tab-triage popup after a sort: 16 of 17 tabs grouped, one left alone, each with its group and the reason.">
+        <img class="dark" src="/img/popup-dark.png" width="360" height="284" alt="The tab-triage popup after a sort, dark theme.">
+      </figure>
+    </div>
+
+    <ul class="points">
+      <li><h2>Fast</h2><p>Roughly half of a typical window is grouped on your device by domain rules, with no network call.</p></li>
+      <li><h2>Private</h2><p>Only a site's hostname and the first 120 characters of its title are sent. Never full URLs or page content. <a href="/privacy">Privacy policy</a></p></li>
+      <li><h2>Yours</h2><p>Twelve default groups you can edit. Prefer it cautious? Strict mode only groups tabs it is at least 80% sure about. Open source, MIT.</p></li>
     </ul>
-    <p class="muted">This site also hosts the small service the extension calls (<code>/api/classify</code>). It forwards a tab's hostname and title to TypeSafe and stores neither.</p>
+
+    <p class="muted foot">Not on the Web Store? <a href="/install">Install from a zip</a>. Want to run it on your own TypeSafe key? See the <a href="https://github.com/alwnraj/tab-triage#use-your-own-typesafe-api-key">README</a>. This site also hosts the small service the extension calls (<code>/api/classify</code>), which forwards a tab's hostname and title to TypeSafe and stores neither.</p>
   </main>
 </body>
 </html>
